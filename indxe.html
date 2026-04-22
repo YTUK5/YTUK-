@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YTUK F</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #0f172a; font-family: 'Cairo', sans-serif; touch-action: none; color: white; user-select: none; transition: direction 0.3s ease; }
+        canvas { display: block; width: 100vw; height: 100vh; position: absolute; z-index: 1; }
+        .ui-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
+        .interactive { pointer-events: auto; }
+        .hidden { display: none !important; }
+        
+        .glass-panel { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        .glass-header { background: linear-gradient(180deg, rgba(2, 6, 23, 0.9) 0%, rgba(15, 23, 42, 0.6) 100%); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        .btn-glow { box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); transition: all 0.3s ease; }
+        .btn-glow:hover { box-shadow: 0 0 25px rgba(56, 189, 248, 0.8); transform: translateY(-2px); }
+        
+        .input-field { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0; transition: all 0.3s ease; padding: 0.75rem 1rem; border-radius: 0.75rem; width: 100%; }
+        .input-field:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); background: rgba(0, 0, 0, 0.5); }
+        .input-disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.5); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
+        .modal-bg { background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(8px); }
+        .modal-content { max-height: 85vh; overflow-y: auto; }
+        
+        .tab-btn { border-bottom: 2px solid transparent; transition: all 0.3s ease; cursor: pointer; }
+        .tab-btn.active { border-bottom: 2px solid #38bdf8; color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+        .admin-tab.active { background-color: #38bdf8; color: #0f172a; font-weight: bold; }
+        .shop-tab.active { background-color: rgba(250, 204, 21, 0.2); border-color: #facc15; color: #facc15; }
+
+        .level-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 12px; padding: 10px 0; }
+        .level-btn { aspect-ratio: 1; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 1.5rem; transition: all 0.2s; border: 2px solid transparent; cursor: pointer; }
+        .level-unlocked { background: linear-gradient(135deg, rgba(15,23,42,0.8), rgba(30,58,138,0.5)); border-color: #38bdf8; color: white; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2); }
+        .level-unlocked:hover { background: #38bdf8; color: #0f172a; box-shadow: 0 0 20px rgba(56, 189, 248, 0.8); transform: scale(1.05); }
+        .level-locked { background: rgba(30, 41, 59, 0.3); border-color: rgba(255,255,255,0.05); color: #475569; cursor: not-allowed; }
+        
+        .avatar-circle { background-size: cover; background-position: center; border: 2px solid rgba(255,255,255,0.2); }
+        .theme-circle { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: transform 0.2s; border: 2px solid transparent; }
+        .theme-circle:hover { transform: scale(1.1); }
+        .theme-circle.active { border-color: white; box-shadow: 0 0 15px currentColor; }
+        
+        .digital-font { font-family: 'Courier New', Courier, monospace; font-variant-numeric: tabular-nums; }
+        @keyframes shakeChest { 0% { transform: rotate(0deg); } 25% { transform: rotate(-10deg) scale(1.1); } 50% { transform: rotate(10deg) scale(1.1); } 75% { transform: rotate(-10deg) scale(1.1); } 100% { transform: rotate(0deg) scale(1); } }
+        .animate-shake { animation: shakeChest 0.5s ease-in-out infinite; cursor: pointer; }
+        .chest-icon { font-size: 6rem; filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.8)); transition: all 0.3s; }
+        .chest-icon:hover { transform: scale(1.1); }
+
+        /* VIP Badges */
+        .vip-badge { padding: 4px 8px; border-radius: 6px; font-size: 0.70rem; font-weight: 900; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
+        .vip-1f { background: linear-gradient(45deg, #facc15, #ca8a04); color: #000; box-shadow: 0 0 10px rgba(250,204,21,0.5); border: 1px solid #fef08a; }
+        .vip-2f { background: linear-gradient(45deg, #cbd5e1, #94a3b8); color: #0f172a; box-shadow: 0 0 10px rgba(203,213,225,0.5); border: 1px solid #f8fafc; }
+        .vip-3f { background: linear-gradient(45deg, #d97706, #92400e); color: #fff; box-shadow: 0 0 10px rgba(217,119,6,0.5); border: 1px solid #fcd34d; }
+        .vip-timer { background: rgba(0,0,0,0.6); padding: 1px 4px; border-radius: 4px; font-family: monospace; font-size: 0.65rem; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <canvas id="bgCanvas" class="z-0"></canvas>
+    <canvas id="gameCanvas" class="hidden z-10"></canvas>
+
+    <!-- شاشة تنبيه مخصصة -->
+    <div id="customAlertScreen" class="ui-container interactive modal-bg hidden z-[90]">
+        <div class="glass-panel p-8 rounded-3xl text-center border border-white/10 w-80 max-w-[90%]">
+            <div id="customAlertMsg" class="text-white text-lg font-bold mb-6"></div>
+            <div class="flex gap-4 justify-center">
+                <button id="customAlertConfirmBtn" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-6 rounded-xl transition">حسناً</button>
+                <button id="customAlertCancelBtn" class="bg-rose-600/20 border border-rose-500/50 hover:bg-rose-600/40 text-rose-300 font-bold py-2 px-6 rounded-xl transition hidden">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة المصادقة -->
+    <div id="authScreen" class="ui-container interactive modal-bg z-50">
+        <div class="glass-panel modal-content custom-scrollbar p-8 w-[90%] max-w-md rounded-3xl relative">
+            <div id="authLoadingOverlay" class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm z-10 rounded-3xl flex flex-col items-center justify-center hidden">
+                <div class="text-4xl animate-spin mb-4">⌛</div>
+                <div class="text-sky-400 font-bold text-lg animate-pulse" data-ar="جاري التحقق من الدخول التلقائي..." data-en="Checking auto-login...">جاري التحقق من الدخول التلقائي...</div>
+            </div>
+
+            <h1 class="text-5xl font-black text-center text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-500 mb-8 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">YTUK F</h1>
+            
+            <div id="authTabsContainer">
+                <div class="flex justify-between mb-6 border-b border-slate-700/50">
+                    <button id="tabLogin" class="tab-btn active w-1/2 py-3 text-lg font-bold text-slate-200">دخول</button>
+                    <button id="tabRegister" class="tab-btn w-1/2 py-3 text-lg font-bold text-slate-500">حساب جديد</button>
+                </div>
+                <div id="authError" class="hidden bg-rose-500/10 border border-rose-500/50 text-rose-400 px-4 py-3 rounded-xl mb-4 text-sm text-center font-bold"></div>
+                <form id="authForm" class="flex flex-col gap-5" onsubmit="return false;">
+                    <div id="emailContainer" class="hidden flex-col gap-1"><input type="email" id="authEmail" class="input-field" placeholder="البريد الإلكتروني (اختياري)"></div>
+                    <div class="flex flex-col gap-1"><input type="text" id="authUsername" class="input-field" placeholder="اسم المستخدم"></div>
+                    <div class="flex flex-col gap-1"><input type="password" id="authPassword" class="input-field" placeholder="رمز الدخول"></div>
+                    <button id="submitAuthBtn" class="btn-glow bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold py-4 mt-2 rounded-xl text-xl">ابدأ الآن</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- الشاشة الرئيسية -->
+    <div id="startScreen" class="ui-container interactive bg-slate-900/40 backdrop-blur-sm z-40 hidden">
+        <div class="absolute top-0 w-full z-50">
+            <div class="glass-header w-full shadow-lg">
+                <div class="max-w-6xl mx-auto flex flex-row items-center gap-3 md:gap-6 overflow-x-auto px-4 py-3 hide-scrollbar">
+                    <button id="openSettingsBtn" class="shrink-0 bg-black/30 hover:bg-black/50 w-12 h-12 rounded-full border border-white/10 transition text-xl flex items-center justify-center" title="الإعدادات">⚙️</button>
+                    <div class="shrink-0 flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-2xl border border-white/5">
+                        <div class="w-10 h-10 rounded-full avatar-circle shadow-inner flex items-center justify-center font-black text-xl bg-gradient-to-br from-slate-700 to-slate-900" id="playerAvatarColor"></div>
+                        <div class="flex flex-col pr-1">
+                            <div class="flex items-center gap-2">
+                                <span id="welcomeText" class="font-black text-white text-base drop-shadow-md leading-tight">الاسم</span>
+                                <span id="playerVipBadgeContainer"></span>
+                            </div>
+                            <span id="equippedCharName" class="text-[10px] text-sky-300 font-bold tracking-wide" data-ar="المبتدئ" data-en="Novice">المبتدئ</span>
+                        </div>
+                    </div>
+                    <div class="shrink-0 bg-black/40 px-4 py-2 rounded-2xl border border-amber-500/30 flex items-center gap-2 shadow-inner">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider" data-ar="النقاط:" data-en="Score:">النقاط:</span>
+                        <span id="totalPointsDisplay" class="font-black text-amber-400 text-lg">0</span><span class="text-sm">🏆</span>
+                    </div>
+                    <div class="shrink-0 bg-black/40 px-4 py-2 rounded-2xl border border-cyan-500/30 flex items-center gap-2 shadow-inner">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider" data-ar="الألماس:" data-en="Diamonds:">الألماس:</span>
+                        <span id="diamondsDisplay" class="font-black text-cyan-400 text-lg">0</span><span class="text-sm">💎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-center justify-center h-full w-full pt-20">
+            <h1 class="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-500 mb-6 text-center drop-shadow-[0_10px_20px_rgba(56,189,248,0.3)] tracking-tighter">YTUK F</h1>
+
+            <div id="rewardChestBtnContainer" class="hidden mb-4">
+                <button onclick="openChestModal()" class="bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 border border-yellow-300/50 text-white font-black py-2 px-8 rounded-full shadow-[0_0_20px_rgba(250,204,21,0.6)] animate-pulse flex items-center gap-2">
+                    🎁 استلام جائزة المتصدرين!
+                </button>
+            </div>
+            
+            <div id="adminPanelBtnContainer" class="hidden mb-4">
+                <button onclick="openAdmin()" class="bg-red-500/20 hover:bg-red-500/40 border border-red-500/50 text-red-400 font-bold py-2 px-6 rounded-xl transition animate-pulse">⚙️ لوحة تحكم الإدارة</button>
+            </div>
+
+            <div class="flex flex-col gap-3 w-80 max-w-[90%]">
+                <button onclick="startGame(false, -1)" class="btn-glow bg-gradient-to-r from-sky-500 to-blue-600 text-white font-black py-4 px-6 rounded-2xl text-xl flex justify-between items-center">
+                    <span data-ar="استكمال اللعب" data-en="Continue">استكمال اللعب</span>
+                    <span class="bg-black/20 px-3 py-1 rounded-lg text-sm"><span data-ar="مرحلة" data-en="Lv">مرحلة</span> <span id="mainMenuLatestLevel">1</span></span>
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="openLevelsMap()" class="glass-panel flex-1 hover:bg-slate-800/80 text-sky-300 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2"><span data-ar="🗺️ الخريطة" data-en="🗺️ Map">🗺️ الخريطة</span></button>
+                    <button onclick="startGame(true, -1)" class="glass-panel flex-1 hover:bg-slate-800/80 border-purple-500/30 text-purple-400 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2"><span data-ar="∞ لانهائي" data-en="∞ Endless">∞ لانهائي</span></button>
+                </div>
+                
+                <div class="flex gap-2 mt-1">
+                    <button onclick="openShop(false)" class="glass-panel flex-1 hover:bg-slate-800/80 border-cyan-500/30 text-cyan-300 font-bold py-3 rounded-xl transition shadow-lg flex justify-center items-center gap-1"><span data-ar="💎 المتجر" data-en="💎 Shop">💎 المتجر</span></button>
+                    <button onclick="checkAndOpenEliteShop()" class="bg-gradient-to-r from-amber-600/20 to-yellow-600/20 border border-yellow-500/50 hover:bg-yellow-500/30 text-yellow-400 font-black flex-1 py-3 rounded-xl transition shadow-[0_0_15px_rgba(250,204,21,0.2)] flex justify-center items-center gap-1"><span data-ar="👑 النخبة" data-en="👑 Elite">👑 النخبة</span></button>
+                </div>
+                <button onclick="openLeaderboard()" class="glass-panel w-full hover:bg-slate-800/80 border-amber-500/30 text-amber-300 font-bold py-3 rounded-xl transition shadow-lg mt-1"><span data-ar="🏆 الأساطير" data-en="🏆 Leaders">🏆 الأساطير</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- الإعدادات ⚙️ -->
+    <div id="settingsScreen" class="ui-container interactive modal-bg hidden z-[55]">
+        <div class="glass-panel modal-content custom-scrollbar p-6 w-[95%] max-w-2xl rounded-3xl">
+            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                <h2 class="text-3xl font-black text-slate-200 flex items-center gap-2" data-ar="⚙️ الإعدادات" data-en="⚙️ Settings">⚙️ الإعدادات</h2>
+                <button onclick="closeModal('settingsScreen')" class="text-slate-400 hover:text-white text-3xl bg-black/20 w-10 h-10 rounded-full flex items-center justify-center transition">&times;</button>
+            </div>
+            
+            <div class="flex flex-col gap-6">
+                <!-- التحكم بالصوت -->
+                <div class="bg-black/30 p-5 rounded-2xl border border-white/5">
+                    <h3 class="text-pink-400 font-bold mb-3 flex items-center gap-2" data-ar="الصوت والموسيقى 🎵" data-en="Audio & Music 🎵">الصوت والموسيقى 🎵</h3>
+                    
+                    <div class="mb-4">
+                        <label class="text-sm text-slate-400 block mb-2 flex justify-between">
+                            <span data-ar="مستوى الصوت:" data-en="Volume:">مستوى الصوت:</span>
+                            <span id="volumeValueDisplay">50%</span>
+                        </label>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="50" class="w-full accent-pink-500 cursor-pointer" oninput="updateVolume(this.value)">
+                    </div>
+
+                    <p class="text-sm text-rose-400 font-black mb-3 animate-pulse bg-rose-500/10 p-2 rounded-lg border border-rose-500/30 text-center" data-ar="⚠️ يرجى استخدام الموسيقى الغير محرمة" data-en="⚠️ Please use appropriate non-haram music">⚠️ يرجى استخدام الموسيقى الغير محرمة</p>
+                    <div class="flex flex-col gap-2">
+                        <div class="text-sm text-slate-400" data-ar="ارفع ملف صوتي للعب (يستبدل نغمات اللعبة):" data-en="Upload audio file (Replaces game tones):">ارفع ملف صوتي للعب (يستبدل نغمات اللعبة):</div>
+                        <input type="file" id="musicUpload" accept="audio/*" class="text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:font-bold file:bg-pink-500/20 file:text-pink-400 hover:file:bg-pink-500/30 w-full overflow-hidden text-ellipsis cursor-pointer border border-pink-500/20 p-1">
+                        <button id="removeMusicBtn" class="hidden mt-2 bg-slate-800 border border-slate-600 hover:bg-slate-700 text-white text-sm font-bold py-2 rounded-xl transition flex justify-center items-center gap-2" onclick="removeCustomMusic()" data-ar="إزالة الموسيقى المرفوعة 🔇" data-en="Remove Uploaded Music 🔇">إزالة الموسيقى المرفوعة 🔇</button>
+                    </div>
+                </div>
+
+                <div class="bg-black/30 p-5 rounded-2xl border border-white/5">
+                    <h3 class="text-sky-400 font-bold mb-3" data-ar="الصورة الشخصية" data-en="Profile Picture">الصورة الشخصية</h3>
+                    <div class="flex flex-col md:flex-row items-center gap-4">
+                        <div id="settingsAvatarPreview" class="w-24 h-24 rounded-full avatar-circle shadow-lg bg-slate-800 flex items-center justify-center text-3xl font-bold shrink-0">P</div>
+                        <div class="flex-1 w-full">
+                            <button onclick="generateRandomAvatar('settingsAvatarPreview', true)" class="w-full bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2 mb-3">
+                                <span>🎲</span> <span data-ar="توليد صورة عشوائية" data-en="Generate Random Avatar">توليد صورة عشوائية</span>
+                            </button>
+                            <input type="file" id="avatarUpload" accept="image/*" class="text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-500/20 file:text-sky-400 hover:file:bg-sky-500/30 w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-black/30 p-5 rounded-2xl border border-white/5">
+                    <h3 class="text-emerald-400 font-bold mb-3 flex justify-between">
+                        <span data-ar="تغيير الاسم" data-en="Change Name">تغيير الاسم</span>
+                        <span class="text-xs bg-rose-500/20 text-rose-300 px-2 py-1 rounded" data-ar="مسموح مرة واحدة!" data-en="Allowed ONLY once!">مسموح مرة واحدة!</span>
+                    </h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="newNameInput" class="input-field flex-1" placeholder="اسمك الجديد">
+                        <button id="saveNameBtn" class="bg-emerald-600 hover:bg-emerald-500 px-6 rounded-xl font-bold transition" data-ar="حفظ" data-en="Save">حفظ</button>
+                    </div>
+                    <div id="nameChangeMsg" class="text-xs mt-2 text-rose-400 hidden"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5">
+                        <h3 class="text-purple-400 font-bold mb-3" data-ar="ألوان الواجهة الرئيسية" data-en="Main Menu Theme">ألوان الواجهة الرئيسية</h3>
+                        <div class="flex gap-3 justify-center">
+                            <div onclick="setTheme(0)" class="theme-circle text-[#38bdf8]" style="background: #0f172a; border-color: #38bdf8"></div>
+                            <div onclick="setTheme(1)" class="theme-circle text-[#10b981]" style="background: #022c22; border-color: #10b981"></div>
+                            <div onclick="setTheme(2)" class="theme-circle text-[#d946ef]" style="background: #2e0231; border-color: #d946ef"></div>
+                            <div onclick="setTheme(3)" class="theme-circle text-[#ef4444]" style="background: #450a0a; border-color: #ef4444"></div>
+                        </div>
+                    </div>
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5">
+                        <h3 class="text-amber-400 font-bold mb-3" data-ar="اللغة / Language" data-en="Language / اللغة">اللغة / Language</h3>
+                        <div class="flex gap-2">
+                            <button onclick="setLang('ar')" class="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded-lg font-bold">العربية</button>
+                            <button onclick="setLang('en')" class="flex-1 bg-slate-700 hover:bg-slate-600 py-2 rounded-lg font-bold">English</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-2 text-center border-t border-white/10 pt-6">
+                    <button id="logoutBtn" class="bg-rose-600/20 border border-rose-500/50 hover:bg-rose-600/40 text-rose-400 font-bold py-3 px-10 rounded-xl transition shadow-[0_0_15px_rgba(225,29,72,0.2)]" data-ar="تسجيل الخروج" data-en="Log Out">تسجيل الخروج</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- خريطة المراحل -->
+    <div id="levelsMapScreen" class="ui-container interactive modal-bg hidden z-[52]">
+        <div class="glass-panel modal-content custom-scrollbar p-6 w-[95%] max-w-3xl rounded-3xl">
+            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                <h2 class="text-3xl font-black text-sky-400" data-ar="🗺️ خريطة المراحل" data-en="🗺️ Levels Map">🗺️ خريطة المراحل</h2>
+                <button onclick="closeModal('levelsMapScreen')" class="text-slate-400 hover:text-white text-3xl bg-black/20 w-10 h-10 rounded-full flex items-center justify-center">&times;</button>
+            </div>
+            <p class="text-slate-400 text-sm mb-4 text-center" data-ar="لا يمكنك لعب مرحلة إلا بعد اجتياز التي قبلها." data-en="Unlock levels by beating the previous one.">لا يمكنك لعب مرحلة إلا بعد اجتياز التي قبلها.</p>
+            <div id="levelsGrid" class="level-grid"></div>
+        </div>
+    </div>
+
+    <!-- المتجر -->
+    <div id="shopScreen" class="ui-container interactive modal-bg hidden z-[51]">
+        <div class="glass-panel modal-content custom-scrollbar p-6 w-[95%] max-w-4xl rounded-3xl">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                <h2 id="shopTitle" class="text-3xl font-black text-cyan-400">💎 المتجر</h2>
+                <div class="bg-black/40 px-4 py-2 rounded-xl border border-cyan-500/30 flex items-center gap-2 shrink-0">
+                    <span class="text-slate-400 text-sm" data-ar="أرصدتك:" data-en="Balance:">أرصدتك:</span> <span id="shopBalance" class="text-cyan-400 font-black text-xl">0</span>
+                </div>
+                <button onclick="closeModal('shopScreen')" class="text-slate-400 hover:text-white text-3xl bg-black/20 w-10 h-10 rounded-full flex items-center justify-center ml-2">&times;</button>
+            </div>
+            
+            <div id="eliteTabsContainer" class="hidden overflow-x-auto hide-scrollbar mb-6">
+                <div class="flex gap-3 pb-2 border-b border-white/5 w-max">
+                    <button onclick="switchEliteTab('chars')" id="tabEliteChars" class="shop-tab active px-6 py-2 rounded-full border border-transparent font-bold transition whitespace-nowrap bg-black/20 text-slate-400">شخصيات النخبة 👑</button>
+                    <button onclick="switchEliteTab('offers')" id="tabEliteOffers" class="shop-tab px-6 py-2 rounded-full border border-transparent font-bold transition whitespace-nowrap bg-black/20 text-slate-400">عروض حصرية 🎁</button>
+                </div>
+            </div>
+
+            <div id="charactersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+            <div id="offersGrid" class="hidden grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+        </div>
+    </div>
+
+    <!-- قائمة المتصدرين -->
+    <div id="leaderboardScreen" class="ui-container interactive modal-bg hidden z-[50]">
+        <div class="glass-panel modal-content custom-scrollbar p-6 w-[95%] max-w-4xl rounded-3xl">
+            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                <h2 class="text-3xl font-black text-amber-400" data-ar="🏆 قائمة الأساطير" data-en="🏆 Hall of Fame">🏆 قائمة الأساطير</h2>
+                <button onclick="closeModal('leaderboardScreen')" class="text-slate-400 hover:text-white text-3xl bg-black/20 w-10 h-10 rounded-full flex items-center justify-center">&times;</button>
+            </div>
+            
+            <div class="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl p-4 mb-6 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] flex flex-col items-center">
+                <h3 class="text-purple-300 mb-1 text-sm font-bold uppercase tracking-wider" data-ar="الوقت المتبقي لتوزيع الجوائز للصناديق" data-en="Time until rewards distribution">الوقت المتبقي لتوزيع الجوائز للصناديق</h3>
+                <div id="rewardTimerDisplay" class="text-3xl md:text-4xl font-black text-white digital-font tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">00:00:00</div>
+            </div>
+
+            <div class="bg-black/30 rounded-2xl p-5 mb-6 border border-white/5 shadow-inner">
+                <div class="flex justify-between text-center text-sm">
+                    <div class="flex-1"><div class="text-yellow-400 font-black text-2xl mb-1">🥇</div><div id="reward1Display" class="text-slate-200">بطاقة VIP 1F ذهبية 🥇</div></div>
+                    <div class="flex-1 border-x border-white/10"><div class="text-slate-300 font-black text-2xl mb-1">🥈</div><div id="reward2Display" class="text-slate-200">بطاقة VIP 2F فضية 🥈</div></div>
+                    <div class="flex-1"><div class="text-amber-600 font-black text-2xl mb-1">🥉</div><div id="reward3Display" class="text-slate-200">بطاقة VIP 3F نحاسية 🥉</div></div>
+                </div>
+            </div>
+
+            <div id="leaderboardList" class="flex flex-col gap-4"></div>
+        </div>
+    </div>
+    
+    <!-- لوحة الإدارة -->
+    <div id="adminScreen" class="ui-container interactive modal-bg hidden z-[60]">
+        <div class="glass-panel modal-content p-6 w-[95%] max-w-5xl h-[85vh] flex flex-col rounded-3xl">
+            <div class="flex justify-between items-center mb-4 border-b border-red-500/30 pb-4">
+                <h2 class="text-3xl font-black text-red-400">⚙️ الإدارة المركزية</h2>
+                <button onclick="closeModal('adminScreen')" class="text-white text-3xl bg-black/20 w-10 h-10 rounded-full flex items-center justify-center">&times;</button>
+            </div>
+            
+            <div class="flex gap-2 mb-4 bg-black/20 p-1 rounded-xl overflow-x-auto hide-scrollbar shrink-0">
+                <button class="admin-tab active flex-1 py-3 px-4 rounded-lg text-slate-300 whitespace-nowrap" data-target="adminUsers">اللاعبين والبوتات</button>
+                <button class="admin-tab flex-1 py-3 px-4 rounded-lg text-slate-300 whitespace-nowrap" data-target="adminChars">تعديل الشخصيات</button>
+                <button class="admin-tab flex-1 py-3 px-4 rounded-lg text-slate-300 whitespace-nowrap" data-target="adminAddElite">إضافة للنخبة 👑</button>
+                <button class="admin-tab flex-1 py-3 px-4 rounded-lg text-slate-300 whitespace-nowrap" data-target="adminSettings">إعدادات الإدارة</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <div id="adminUsers" class="admin-panel-content">
+                    <button onclick="addBot()" class="bg-indigo-600 px-4 py-2 rounded-xl mb-4 hover:bg-indigo-500 transition shadow-lg">+ إضافة لاعب آلي</button>
+                    <div class="overflow-x-auto bg-black/30 rounded-xl border border-white/5">
+                        <table class="w-full text-right text-sm">
+                            <thead class="bg-black/50 text-slate-400">
+                                <tr><th class="p-4">الاسم</th><th class="p-4">النقاط</th><th class="p-4">الألماس</th><th class="p-4">المراحل</th><th class="p-4 text-center">إجراء</th></tr>
+                            </thead>
+                            <tbody id="adminUsersTableBody" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="adminChars" class="admin-panel-content hidden">
+                    <div id="adminCharsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+
+                <div id="adminAddElite" class="admin-panel-content hidden">
+                    <div class="bg-black/30 p-6 rounded-2xl border border-amber-500/30">
+                        <h3 class="text-xl font-bold text-amber-400 mb-4">إنشاء شخصية حصرية لمتجر النخبة 👑</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div><label class="text-sm text-slate-400 block mb-1">الاسم:</label><input type="text" id="newEliteName" class="input-field" placeholder="مثال: فارس الظلام"></div>
+                            <div><label class="text-sm text-slate-400 block mb-1">الوصف:</label><input type="text" id="newEliteDesc" class="input-field" placeholder="وصف القدرة..."></div>
+                            <div><label class="text-sm text-slate-400 block mb-1">السعر (بالألماس):</label><input type="number" id="newElitePrice" class="input-field" value="15000"></div>
+                            <div><label class="text-sm text-slate-400 block mb-1">اللون:</label><input type="color" id="newEliteColor" class="w-full h-11 bg-black/30 border border-white/20 rounded-xl cursor-pointer" value="#ff0055"></div>
+                            <div><label class="text-sm text-slate-400 block mb-1">عدد القفزات:</label><input type="number" id="newEliteJumps" class="input-field" value="3" min="1" max="5"></div>
+                            <div><label class="text-sm text-slate-400 block mb-1">مضاعف النقاط (x):</label><input type="number" id="newEliteMult" class="input-field" value="4" step="0.5" min="1"></div>
+                        </div>
+                        <label class="flex items-center gap-2 text-slate-200 cursor-pointer font-bold mb-6">
+                            <input type="checkbox" id="newEliteShield" class="w-5 h-5 accent-emerald-500 rounded" checked> يمتلك درع حماية؟
+                        </label>
+                        <button onclick="addEliteChar()" class="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 w-full py-3 rounded-xl font-black shadow-[0_0_15px_rgba(245,158,11,0.3)] transition">إضافة الشخصية للمتجر!</button>
+                    </div>
+                </div>
+
+                <div id="adminSettings" class="admin-panel-content hidden flex flex-col gap-6">
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5">
+                        <h3 class="text-lg font-bold text-yellow-400 mb-4">جوائز الأوائل (نص العرض للصناديق)</h3>
+                        <div class="flex items-center gap-4 mb-2"><label class="w-24">المركز 🥇</label><input type="text" id="editReward1" class="input-field flex-1" value="بطاقة VIP 1F ذهبية 🥇"></div>
+                        <div class="flex items-center gap-4 mb-2"><label class="w-24">المركز 🥈</label><input type="text" id="editReward2" class="input-field flex-1" value="بطاقة VIP 2F فضية 🥈"></div>
+                        <div class="flex items-center gap-4 mb-2"><label class="w-24">المركز 🥉</label><input type="text" id="editReward3" class="input-field flex-1" value="بطاقة VIP 3F نحاسية 🥉"></div>
+                        <button id="saveRewardsBtn" class="bg-emerald-600 hover:bg-emerald-500 py-3 px-8 rounded-xl mt-2 font-bold shadow-lg">حفظ الجوائز</button>
+                    </div>
+                    
+                    <div class="bg-black/30 p-5 rounded-2xl border border-white/5">
+                        <h3 class="text-lg font-bold text-purple-400 mb-4">تحديد وقت توزيع الجوائز المستمر للصناديق</h3>
+                        <div class="flex gap-4 mb-4">
+                            <div class="flex-1"><label class="block text-xs text-slate-400 mb-1">ساعات</label><input type="number" id="timerH" class="input-field" value="0" min="0"></div>
+                            <div class="flex-1"><label class="block text-xs text-slate-400 mb-1">دقائق</label><input type="number" id="timerM" class="input-field" value="1" min="0" max="59"></div>
+                            <div class="flex-1"><label class="block text-xs text-slate-400 mb-1">ثواني</label><input type="number" id="timerS" class="input-field" value="0" min="0" max="59"></div>
+                        </div>
+                        <button id="setTimerBtn" class="bg-purple-600 hover:bg-purple-500 w-full py-3 rounded-xl font-bold shadow-lg">تشغيل العداد وتثبيت المدة الدورية</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تعديل المستخدم/البوت -->
+    <div id="userEditScreen" class="ui-container interactive modal-bg hidden z-[70]">
+        <div class="glass-panel modal-content custom-scrollbar p-6 w-[90%] max-w-md rounded-3xl border border-indigo-500/30 shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+            <h3 id="userEditTitle" class="text-2xl font-black text-indigo-400 mb-6 flex items-center gap-2"><span>✏️</span> تعديل الحساب</h3>
+            
+            <label class="text-sm text-slate-400 mb-1 block">الاسم:</label>
+            <input type="text" id="userEditName" class="input-field mb-5" placeholder="الاسم">
+            
+            <label class="text-sm text-slate-400 mb-1 block">الصورة الشخصية (أفاتار):</label>
+            <div class="flex flex-col gap-3 mb-5 bg-black/30 p-3 rounded-xl border border-white/5">
+                <div class="flex items-center gap-4">
+                    <div id="userEditAvatarPreview" class="w-14 h-14 rounded-xl avatar-circle shadow-lg bg-slate-800 shrink-0"></div>
+                    <button onclick="generateRandomAvatar('userEditAvatarPreview', false)" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition w-full justify-center"><span>🎲</span> صورة عشوائية</button>
+                </div>
+                <div class="text-xs text-slate-400 mt-1">أو ارفع صورة من الجهاز:</div>
+                <input type="file" id="userAvatarUpload" accept="image/*" class="text-xs text-slate-300 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-indigo-500/20 file:text-indigo-400 hover:file:bg-indigo-500/30 w-full overflow-hidden text-ellipsis">
+            </div>
+            
+            <label class="text-sm text-slate-400 mb-1 block">الشخصية المختارة:</label>
+            <select id="userEditChar" class="input-field mb-5 bg-slate-800 cursor-pointer appearance-none"></select>
+
+            <div class="bg-black/30 p-4 rounded-xl border border-amber-500/30 mb-6">
+                <label class="text-sm text-amber-400 font-bold mb-3 block">إدارة بطاقات الـ VIP (دخول النخبة):</label>
+                <div class="flex flex-col gap-2">
+                    <label class="flex items-center gap-2 text-slate-200 cursor-pointer"><input type="checkbox" id="vip1Checkbox" class="w-4 h-4 accent-yellow-500"> تفعيل بطاقة VIP 1F (720 ساعة) 🥇</label>
+                    <label class="flex items-center gap-2 text-slate-200 cursor-pointer"><input type="checkbox" id="vip2Checkbox" class="w-4 h-4 accent-slate-400"> تفعيل بطاقة VIP 2F (168 ساعة) 🥈</label>
+                    <label class="flex items-center gap-2 text-slate-200 cursor-pointer"><input type="checkbox" id="vip3Checkbox" class="w-4 h-4 accent-amber-700"> تفعيل بطاقة VIP 3F (24 ساعة) 🥉</label>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="saveUserEdit()" class="bg-emerald-600 hover:bg-emerald-500 flex-1 py-3 rounded-xl font-bold shadow-lg">حفظ التعديلات</button>
+                <button onclick="closeModal('userEditScreen')" class="bg-slate-600 hover:bg-slate-500 flex-1 py-3 rounded-xl font-bold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- الإيقاف المؤقت والنهاية و HUD -->
+    <div id="pauseScreen" class="ui-container interactive bg-slate-900/80 backdrop-blur-md z-40 hidden"><div class="glass-panel p-8 rounded-3xl text-center border border-white/10 w-80 max-w-[90%]"><h2 class="text-5xl font-black text-white mb-8 drop-shadow-md" data-ar="إيقاف مؤقت" data-en="Paused">إيقاف مؤقت</h2><div class="flex flex-col gap-4"><button id="resumeBtn" class="bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold py-4 rounded-xl text-xl shadow-[0_0_15px_rgba(56,189,248,0.5)] transition hover:scale-105" data-ar="استئناف اللعب ▶️" data-en="Resume ▶️">استئناف اللعب ▶️</button><button id="quitGameBtn" class="bg-rose-600/20 border border-rose-500/50 hover:bg-rose-600/40 text-rose-300 font-bold py-4 rounded-xl text-xl transition" data-ar="الخروج للقائمة 🚪" data-en="Quit 🚪">الخروج للقائمة 🚪</button></div></div></div>
+    <div id="gameOverScreen" class="ui-container interactive bg-slate-900/95 backdrop-blur-xl z-40 hidden"><h2 class="text-6xl md:text-7xl font-black mb-4" id="gameOverTitle">انتهت اللعبة!</h2><div class="flex gap-4 mb-8"><div class="glass-panel p-6 rounded-3xl border border-amber-500/30 w-40 text-center shadow-[0_0_30px_rgba(245,158,11,0.1)]"><div class="text-slate-400 text-sm font-bold uppercase mb-2" data-ar="نقاط" data-en="Score">نقاط</div><div id="earnedPoints" class="text-4xl font-black text-amber-400">+0</div></div><div class="glass-panel p-6 rounded-3xl border border-cyan-500/30 w-40 text-center shadow-[0_0_30px_rgba(6,182,212,0.1)]"><div class="text-slate-400 text-sm font-bold uppercase mb-2" data-ar="ألماس" data-en="Diamonds">ألماس</div><div id="earnedDiamonds" class="text-4xl font-black text-cyan-400">+0</div></div></div><button id="restartBtn" class="btn-glow bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-black py-4 px-12 rounded-2xl text-2xl tracking-wide" data-ar="العودة للقائمة" data-en="Back to Menu">العودة للقائمة</button></div>
+    
+    <div id="hud" class="absolute top-0 w-full p-4 pointer-events-none z-30 hidden flex-col gap-2">
+        <div class="flex justify-between items-center glass-panel px-4 md:px-6 py-3 rounded-2xl relative">
+            <button id="pauseBtn" class="interactive absolute -bottom-4 md:-bottom-6 right-4 bg-slate-800 hover:bg-slate-700 border border-white/20 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xl shadow-lg transition">⏸️</button>
+            <div class="text-center w-16 md:w-20"><span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest" id="hudLevelLabel" data-ar="المرحلة" data-en="Level">المرحلة</span><div id="hudLevel" class="text-xl md:text-2xl font-black text-white leading-none mt-1">1</div></div>
+            <div id="hudProgressArea" class="flex-1 mx-4 md:mx-6 text-center"><div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1 px-1 uppercase tracking-wider"><span></span><span><span data-ar="الهدف:" data-en="Target:">الهدف:</span> <span id="hudTarget" class="text-sky-400">100</span></span></div><div class="w-full bg-black/50 rounded-full h-3 md:h-4 border border-white/10 overflow-hidden relative shadow-inner"><div id="progressBar" class="bg-gradient-to-r from-sky-400 via-indigo-500 to-purple-500 h-full w-0 transition-all duration-300 relative"><div class="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]"></div></div></div></div>
+            <div class="text-center flex flex-col gap-1 w-20 md:w-24 items-end"><div class="bg-black/40 px-2 md:px-3 py-1 rounded-lg border border-amber-500/20 w-full text-right flex justify-between"><span class="text-amber-400 text-xs md:text-sm">🏆</span><span id="scoreDisplay" class="font-black text-amber-400 text-sm md:text-base">0</span></div><div class="bg-black/40 px-2 md:px-3 py-1 rounded-lg border border-cyan-500/20 w-full text-right flex justify-between"><span class="text-cyan-400 text-xs md:text-sm">💎</span><span id="diamondDisplayHUD" class="font-black text-cyan-400 text-sm md:text-base">0</span></div></div>
+        </div>
+    </div>
+
+    <!-- سكربت نوع Module لتمكين Firebase والحفظ السحابي -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let auth, db, appId = 'ytuk-f-app', deviceUid;
+        
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'ytuk-f-app';
+            }
+        } catch(e) {
+            console.log("Firebase not configured properly, running in memory-only mode.");
+        }
+
+        // --- نظام التنبيه المخصص الجديد (بديل للـ alert) ---
+        window.showAlert = function(msg, isConfirm = false, confirmCallback = null) {
+            document.getElementById('customAlertMsg').innerText = msg;
+            document.getElementById('customAlertConfirmBtn').onclick = () => {
+                document.getElementById('customAlertScreen').classList.add('hidden');
+                if (isConfirm && confirmCallback) confirmCallback();
+            };
+            const cancelBtn = document.getElementById('customAlertCancelBtn');
+            if (isConfirm) {
+                cancelBtn.classList.remove('hidden');
+                cancelBtn.onclick = () => document.getElementById('customAlertScreen').classList.add('hidden');
+            } else {
+                cancelBtn.classList.add('hidden');
+            }
+            document.getElementById('customAlertScreen').classList.remove('hidden');
+        };
+
+        // --- المحرك الصوتي (أصوات إلكترونية 8-Bit حماسية) ---
+        window.AudioGen = {
+            ctx: null, timer: null, isPlaying: false, masterGain: null, masterVolume: 0.5,
+            init: function() {
+                if(!this.ctx) {
+                    try { 
+                        this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+                        this.masterGain = this.ctx.createGain();
+                        this.masterGain.gain.value = this.masterVolume; 
+                        this.masterGain.connect(this.ctx.destination);
+                    } catch(e) {}
+                }
+            },
+            playTone: function(freq, type, dur) {
+                if(!this.ctx || this.masterVolume === 0) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type; osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+                    osc.connect(gain); gain.connect(this.masterGain);
+                    osc.start(); osc.stop(this.ctx.currentTime + dur);
+                } catch(e) {}
+            },
+            startMenu: function() {
+                this.stop(); if(this.masterVolume === 0) return;
+                this.init(); this.isPlaying = true;
+                if(this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+                const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
+                let step = 0;
+                this.timer = setInterval(() => {
+                    if(this.ctx && this.ctx.state === 'running' && this.masterVolume > 0) {
+                        this.playTone(notes[step % notes.length], 'square', 0.15);
+                    }
+                    step++;
+                }, 250); 
+            },
+            startLevel: function(level) {
+                this.stop(); if(this.masterVolume === 0) return;
+                this.init(); this.isPlaying = true;
+                if(this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+                const baseFreq = 150 + (level * 5);
+                const notes = [baseFreq, baseFreq*1.2, baseFreq*1.5, baseFreq*1.2];
+                const speed = Math.max(100, 200 - (level * 2));
+                let step = 0;
+                this.timer = setInterval(() => {
+                    if(this.ctx && this.ctx.state === 'running' && this.masterVolume > 0) {
+                        this.playTone(notes[step % notes.length], 'sawtooth', 0.1);
+                        if(step % 4 === 0) this.playTone(baseFreq / 2, 'square', 0.2);
+                    }
+                    step++;
+                }, speed); 
+            },
+            startEndless: function() {
+                this.stop(); if(this.masterVolume === 0) return;
+                this.init(); this.isPlaying = true;
+                if(this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+                const notes = [130.81, 130.81, 155.56, 130.81, 196.00, 130.81];
+                let step = 0;
+                this.timer = setInterval(() => {
+                    if(this.ctx && this.ctx.state === 'running' && this.masterVolume > 0) {
+                        this.playTone(notes[step % notes.length], 'square', 0.1);
+                    }
+                    step++;
+                }, 130);
+            },
+            stop: function() {
+                this.isPlaying = false;
+                if(this.timer) clearInterval(this.timer);
+            },
+            pause: function() { if(this.ctx && this.ctx.state === 'running') this.ctx.suspend(); },
+            resume: function() { if(this.ctx && this.ctx.state === 'suspended' && this.masterVolume > 0 && this.isPlaying) this.ctx.resume(); },
+            setVolume: function(vol) { this.masterVolume = vol; if(this.masterGain) this.masterGain.gain.value = vol; }
+        };
+
+        window.customAudio = new Audio();
+        window.customAudio.loop = true;
+        window.hasCustomMusic = false;
+
+        window.updateVolume = function(val) {
+            let vol = val / 100;
+            document.getElementById('volumeValueDisplay').innerText = val + "%";
+            window.AudioGen.setVolume(vol * 0.5); 
+            window.customAudio.volume = vol;
+        };
+
+        // --- قواعد البيانات ---
+        window.charactersDB = [
+            { id: 0, nameAr: "المبتدئ", nameEn: "Novice", desc: "متوازن. لا ميزات إضافية.", price: 0, color: "#94a3b8", jumps: 2, grav: 0.6, hitbox: 1.0, mult: 1.0, shield: false, isElite: false },
+            { id: 1, nameAr: "الرشيق", nameEn: "Agile", desc: "سقوط سريع لتفادي دقيق.", price: 50, color: "#fbbf24", jumps: 2, grav: 0.85, hitbox: 1.0, mult: 1.0, shield: false, isElite: false },
+            { id: 2, nameAr: "الطيار", nameEn: "Floater", desc: "يخترق الجاذبية ويطفو.", price: 100, color: "#a3e635", jumps: 2, grav: 0.4, hitbox: 1.0, mult: 1.0, shield: false, isElite: false },
+            { id: 3, nameAr: "النينجا", nameEn: "Ninja", desc: "3 قفزات متتالية.", price: 250, color: "#ef4444", jumps: 3, grav: 0.6, hitbox: 1.0, mult: 1.0, shield: false, isElite: false },
+            { id: 4, nameAr: "الشبح", nameEn: "Ghost", desc: "حجم تصادم أصغر.", price: 500, color: "#c084fc", jumps: 2, grav: 0.6, hitbox: 0.6, mult: 1.0, shield: false, isElite: false },
+            { id: 5, nameAr: "المغناطيس", nameEn: "Magnet", desc: "يضاعف النقاط (🏆) المكتسبة 2x.", price: 1000, color: "#f472b6", jumps: 2, grav: 0.6, hitbox: 1.0, mult: 2.0, shield: false, isElite: false },
+            { id: 6, nameAr: "الملك", nameEn: "King", desc: "درع ذهبي يحميك من اصطدام واحد.", price: 2000, color: "#facc15", jumps: 2, grav: 0.6, hitbox: 1.0, mult: 1.0, shield: true, isElite: false },
+            { id: 101, nameAr: "التنين الأسود", nameEn: "Dark Dragon", desc: "3 قفزات + درع + 3x نقاط", price: 5000, color: "#111827", jumps: 3, grav: 0.6, hitbox: 1.0, mult: 3.0, shield: true, isElite: true },
+            { id: 102, nameAr: "سيد النيون", nameEn: "Neon Master", desc: "يطفو + 5x نقاط + درع", price: 10000, color: "#00ffcc", jumps: 2, grav: 0.3, hitbox: 0.8, mult: 5.0, shield: true, isElite: true }
+        ];
+
+        window.offersDB = [
+            { id: 1, title: "باقة الذهب 🥇", desc: "باقة حصرية لحاملي بطاقة VIP 1F الذهبية. (الطلب عبر واتساب)", reqVip: "vip1", color: "#facc15" },
+            { id: 2, title: "باقة الفضة 🥈", desc: "باقة حصرية لحاملي بطاقة VIP 2F الفضية. (الطلب عبر واتساب)", reqVip: "vip2", color: "#cbd5e1" },
+            { id: 3, title: "باقة النحاس 🥉", desc: "باقة حصرية لحاملي بطاقة VIP 3F النحاسية. (الطلب عبر واتساب)", reqVip: "vip3", color: "#d97706" }
+        ];
+
+        window.rewardsDB = { 1: "بطاقة VIP 1F ذهبية 🥇", 2: "بطاقة VIP 2F فضية 🥈", 3: "بطاقة VIP 3F نحاسية 🥉" };
+
+        window.usersDB = [
+            { id: "u_admin", username: 'YTUK gr', password: 'admin', role: 'admin', unlockedLevels: 50, totalPoints: 999999, diamonds: 50000, ownedChars: [0,1,2,3,4,5,6,101,102], equippedChar: 102, isBot: false, avatar: {type: 'color', val: '#facc15'}, pendingReward: null, nameChanged: false, lang: 'ar', theme: 0, vipCards: { vip1: Date.now() + 720*3600000 } },
+            { id: "b_1", username: 'Shadow_YT', role: 'player', unlockedLevels: 15, totalPoints: 45000, diamonds: 200, ownedChars: [0,1], equippedChar: 1, isBot: true, avatar: {type: 'preset', val: 'https://api.dicebear.com/7.x/bottts/svg?seed=Shadow'}, pendingReward: null, nameChanged: false, lang: 'ar', theme: 0, vipCards: {} },
+            { id: "b_2", username: 'NeonKing', role: 'player', unlockedLevels: 30, totalPoints: 125000, diamonds: 800, ownedChars: [0,1,2,3,4], equippedChar: 4, isBot: true, avatar: {type: 'preset', val: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Neon'}, pendingReward: null, nameChanged: false, lang: 'ar', theme: 0, vipCards: {} }
+        ];
+        
+        window.currentUser = null;
+
+        window.palettes = [{ bg: '#0f172a', ground: '#1e1b4b', glow: '#38bdf8', grid: '#1e3a8a', obs: '#f43f5e' }, { bg: '#022c22', ground: '#064e3b', glow: '#10b981', grid: '#047857', obs: '#f59e0b' }, { bg: '#2e0231', ground: '#4a044e', glow: '#d946ef', grid: '#86198f', obs: '#14b8a6' }, { bg: '#450a0a', ground: '#7f1d1d', glow: '#ef4444', grid: '#991b1b', obs: '#38bdf8' }, { bg: '#000000', ground: '#111111', glow: '#facc15', grid: '#422006', obs: '#a855f7' }];
+        window.gameLevels = []; for(let i = 0; i < 50; i++) { window.gameLevels.push({ id: i + 1, targetScore: 100 + (i * 25), baseSpeed: 5 + (i * 0.12), paletteIdx: i % 4 }); }
+
+        let currentRewardDuration = 60 * 1000; 
+        let rewardEndTime = Date.now() + currentRewardDuration; 
+        
+        // --- نظام التذكر التلقائي عبر Firebase ---
+        async function initSession() {
+            if (!auth) return;
+            try {
+                const overlay = document.getElementById('authLoadingOverlay');
+                if(overlay) overlay.classList.remove('hidden');
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                deviceUid = auth.currentUser.uid;
+                
+                const sessionRef = doc(db, 'artifacts', appId, 'users', deviceUid, 'session', 'login');
+                const sessionSnap = await getDoc(sessionRef);
+                
+                if(overlay) overlay.classList.add('hidden');
+
+                if (sessionSnap.exists() && sessionSnap.data().username) {
+                    const savedUsername = sessionSnap.data().username;
+                    const foundUser = window.usersDB.find(u => u.username === savedUsername);
+                    if (foundUser) {
+                        loginSuccess(foundUser, false);
+                    }
+                }
+            } catch (e) {
+                console.error("Firebase init session error:", e);
+                const overlay = document.getElementById('authLoadingOverlay');
+                if(overlay) overlay.classList.add('hidden');
+            }
+        }
+        initSession();
+
+        function formatTimeLeft(expiresAt) {
+            let diff = expiresAt - Date.now();
+            if (diff <= 0) return null;
+            let h = Math.floor(diff / 3600000);
+            let m = Math.floor((diff % 3600000) / 60000);
+            let s = Math.floor((diff % 60000) / 1000);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        window.renderLeaderboard = function() {
+            const list = document.getElementById('leaderboardList'); if(!list) return; list.innerHTML = '';
+            let sortedUsers = [...window.usersDB].sort((a, b) => b.totalPoints - a.totalPoints);
+            sortedUsers.forEach((u, index) => {
+                let rStyle = "bg-black/40 border-white/5", rIcon = `${index + 1}`, wmColor = "text-slate-600"; 
+                if (index === 0) { rStyle = "bg-gradient-to-r from-yellow-500/20 to-black/40 border-yellow-500/50"; rIcon = "🥇"; wmColor = "text-yellow-500"; }
+                else if (index === 1) { rStyle = "bg-gradient-to-r from-slate-300/20 to-black/40 border-slate-300/50"; rIcon = "🥈"; wmColor = "text-slate-300"; }
+                else if (index === 2) { rStyle = "bg-gradient-to-r from-amber-600/20 to-black/40 border-amber-600/50"; rIcon = "🥉"; wmColor = "text-amber-500"; }
+                const isMe = window.currentUser && u.id === window.currentUser.id; if (isMe) rStyle += " ring-2 ring-sky-500 shadow-[0_0_20px_rgba(56,189,248,0.2)]";
+                const char = window.charactersDB.find(c => c.id === u.equippedChar);
+                const charName = window.currentUser && window.currentUser.lang === 'en' ? char.nameEn : char.nameAr;
+                const vipBadgesHtml = generateVipBadgesHTML(u.vipCards);
+
+                let avatarHTML = '';
+                if(u.avatar && u.avatar.type !== 'color') { avatarHTML = `<div class="w-14 h-14 rounded-2xl avatar-circle shadow-lg" style="background-image: url('${u.avatar.val}')"></div>`; } 
+                else { let avColor = u.avatar ? u.avatar.val : char.color; avatarHTML = `<div class="w-14 h-14 rounded-2xl border border-white/20 shadow-lg flex items-center justify-center font-bold text-xl" style="background: linear-gradient(135deg, ${avColor}, #000)">${u.username.charAt(0).toUpperCase()}</div>`; }
+
+                list.innerHTML += `
+                    <div class="relative overflow-hidden flex flex-col md:flex-row items-center justify-between p-5 rounded-2xl border ${rStyle} gap-4">
+                        <div class="absolute -right-4 -top-8 text-9xl opacity-5 font-black pointer-events-none ${wmColor}">${index + 1}</div>
+                        <div class="flex items-center gap-4 w-full md:w-auto z-10">
+                            <div class="w-12 text-center text-3xl font-black">${rIcon}</div>
+                            <div class="relative">${avatarHTML}</div>
+                            <div><div class="font-black text-xl text-white tracking-wide flex flex-col gap-1 items-start"><div class="flex items-center gap-2">${u.username}</div><div>${vipBadgesHtml}</div></div><div class="text-sm font-bold mt-1" style="color: ${char.color}">${charName} <span class="text-slate-500 ml-1">| Lvl ${u.unlockedLevels}</span></div></div>
+                        </div>
+                        <div class="flex gap-3 w-full md:w-auto z-10">
+                            <div class="bg-black/50 px-4 py-2 rounded-xl border border-amber-500/20 flex flex-col items-center min-w-[110px]">
+                                <span class="text-[10px] text-slate-400 uppercase tracking-widest mb-1" data-ar="النقاط" data-en="Score">النقاط</span><div class="text-xl font-black text-amber-400">${u.totalPoints.toLocaleString()} 🏆</div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        };
+
+        window.openLeaderboard = function() {
+            document.getElementById('reward1Display').innerText = window.rewardsDB[1]; document.getElementById('reward2Display').innerText = window.rewardsDB[2]; document.getElementById('reward3Display').innerText = window.rewardsDB[3];
+            window.renderLeaderboard();
+            document.getElementById('leaderboardScreen').classList.remove('hidden');
+        };
+
+        function updateTimers() {
+            const timerDisplay = document.getElementById('rewardTimerDisplay');
+            if(timerDisplay) {
+                const diff = rewardEndTime - Date.now();
+                if(diff <= 0) { 
+                    distributeRewards(); 
+                    rewardEndTime = Date.now() + currentRewardDuration; 
+                } else {
+                    let h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
+                    timerDisplay.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                }
+            }
+            
+            document.querySelectorAll('.vip-timer-display').forEach(el => {
+                let expiresAt = parseInt(el.getAttribute('data-expires'));
+                let timeLeft = formatTimeLeft(expiresAt);
+                if (timeLeft) el.innerText = timeLeft;
+                else { el.innerText = "منتهية"; el.classList.add("text-rose-500"); }
+            });
+        }
+        setInterval(updateTimers, 1000);
+
+        setInterval(() => {
+            if (!window.currentUser) return;
+            let updateNeeded = false;
+            window.usersDB.forEach(u => {
+                if(u.isBot) {
+                    let ptsAdded = Math.floor(Math.random() * (u.unlockedLevels * 30)) + 50; 
+                    u.totalPoints += ptsAdded;
+                    u.diamonds += Math.floor(Math.random() * 3);
+                    if(Math.random() < 0.05 && u.unlockedLevels < 50) u.unlockedLevels++;
+                    updateNeeded = true;
+                }
+            });
+            if(updateNeeded && !document.getElementById('leaderboardScreen').classList.contains('hidden')) {
+                window.renderLeaderboard();
+            }
+            if(updateNeeded && !document.getElementById('adminScreen').classList.contains('hidden') && !document.getElementById('adminUsers').classList.contains('hidden')) {
+                 window.renderAdminUsers();
+            }
+        }, 5000); 
+
+        function distributeRewards() {
+            let sorted = [...window.usersDB].sort((a, b) => b.totalPoints - a.totalPoints);
+            for(let i=0; i<3; i++) { 
+                if(sorted[i] && sorted[i].totalPoints > 0) sorted[i].pendingReward = i + 1; 
+            }
+            
+            window.usersDB.forEach(u => { u.totalPoints = 0; });
+            
+            if(window.currentUser) updateMainMenuUI();
+            if(!document.getElementById('leaderboardScreen').classList.contains('hidden')) { window.renderLeaderboard(); }
+        }
+
+        window.openChestModal = function() { document.getElementById('chestIcon').classList.remove('hidden'); document.getElementById('chestResult').classList.add('hidden'); document.getElementById('chestHint').classList.remove('hidden'); document.getElementById('chestModalScreen').classList.remove('hidden'); };
+        
+        window.claimReward = function() {
+            if(!window.currentUser || !window.currentUser.pendingReward) return;
+            document.getElementById('chestIcon').classList.add('hidden'); document.getElementById('chestHint').classList.add('hidden');
+            
+            let rank = window.currentUser.pendingReward;
+            let rewardText = window.rewardsDB[rank] || "جائزة خاصة";
+            
+            if(!window.currentUser.vipCards) window.currentUser.vipCards = {};
+            let vipBonusText = "";
+            let now = Date.now();
+            
+            if(rank === 1) { window.currentUser.vipCards.vip1 = now + (720 * 3600000); vipBonusText = "تم تفعيل بطاقة VIP 1F (ذهبية) لمدة 720 ساعة 🥇"; }
+            else if(rank === 2) { window.currentUser.vipCards.vip2 = now + (168 * 3600000); vipBonusText = "تم تفعيل بطاقة VIP 2F (فضية) لمدة 168 ساعة 🥈"; }
+            else if(rank === 3) { window.currentUser.vipCards.vip3 = now + (24 * 3600000); vipBonusText = "تم تفعيل بطاقة VIP 3F (نحاسية) لمدة 24 ساعة 🥉"; }
+
+            window.currentUser.pendingReward = null;
+            let rtDisplay = document.getElementById('rewardTextDisplay');
+            if(rtDisplay) rtDisplay.innerText = rewardText;
+            let vbDisplay = document.getElementById('vipBonusDisplay');
+            if(vbDisplay) vbDisplay.innerText = vipBonusText;
+            document.getElementById('chestResult').classList.remove('hidden'); 
+            updateMainMenuUI();
+        }
+
+        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
+        window.isLoginMode = true;
+        document.getElementById('tabLogin').onclick = function() { window.isLoginMode = true; this.className = "tab-btn active w-1/2 py-3 text-lg font-bold text-slate-200"; document.getElementById('tabRegister').className = "tab-btn w-1/2 py-3 text-lg font-bold text-slate-500"; document.getElementById('emailContainer').classList.add('hidden'); document.getElementById('submitAuthBtn').innerText = 'دخول'; document.getElementById('authError').classList.add('hidden'); };
+        document.getElementById('tabRegister').onclick = function() { window.isLoginMode = false; this.className = "tab-btn active w-1/2 py-3 text-lg font-bold text-slate-200"; document.getElementById('tabLogin').className = "tab-btn w-1/2 py-3 text-lg font-bold text-slate-500"; document.getElementById('emailContainer').classList.remove('hidden'); document.getElementById('submitAuthBtn').innerText = 'إنشاء حساب جديد'; document.getElementById('authError').classList.add('hidden'); };
+
+        document.getElementById('submitAuthBtn').onclick = () => {
+            const user = document.getElementById('authUsername').value.trim(); const pass = document.getElementById('authPassword').value.trim(); const err = document.getElementById('authError');
+            if (!user || !pass) { err.innerText = 'املأ الحقول الأساسية!'; err.classList.remove('hidden'); return; }
+            if (window.isLoginMode) {
+                const found = window.usersDB.find(u => u.username === user && u.password === pass && !u.isBot);
+                if (found) loginSuccess(found); else { err.innerText = 'بيانات غير صحيحة!'; err.classList.remove('hidden'); }
+            } else {
+                if (window.usersDB.find(u => u.username === user)) { err.innerText = 'الاسم مستخدم مسبقاً!'; err.classList.remove('hidden'); return; }
+                const newUser = { id: 'u_'+Date.now(), username: user, password: pass, role: 'player', unlockedLevels: 1, totalPoints: 0, diamonds: 0, ownedChars: [0], equippedChar: 0, isBot: false, avatar: {type: 'color', val: '#38bdf8'}, pendingReward: null, nameChanged: false, lang: 'ar', theme: 0, vipCards: {} };
+                window.usersDB.push(newUser); loginSuccess(newUser);
+            }
+        };
+
+        function loginSuccess(user, saveSession = true) {
+            window.currentUser = user; 
+            document.getElementById('authScreen').classList.add('hidden'); 
+            document.getElementById('startScreen').classList.remove('hidden');
+            if (user.role === 'admin') document.getElementById('adminPanelBtnContainer').classList.remove('hidden'); else document.getElementById('adminPanelBtnContainer').classList.add('hidden');
+            window.applyLanguage(); updateMainMenuUI();
+            
+            if(!window.hasCustomMusic) window.AudioGen.startMenu();
+            else window.customAudio.play().catch(e=>{});
+
+            if (saveSession && db && deviceUid) {
+                const sessionRef = doc(db, 'artifacts', appId, 'users', deviceUid, 'session', 'login');
+                setDoc(sessionRef, { username: user.username }).catch(e => console.error(e));
+            }
+        }
+
+        function renderAvatarUI(elementId, avatarObj, charColor, username) {
+            const el = document.getElementById(elementId); if(!el) return;
+            if(avatarObj.type === 'color') { el.style.backgroundImage = 'none'; el.style.background = `linear-gradient(135deg, ${charColor}, #0f172a)`; el.innerText = username.charAt(0).toUpperCase(); el.style.color = '#fff'; } 
+            else { el.style.background = 'transparent'; el.style.backgroundImage = `url('${avatarObj.val}')`; el.style.backgroundSize = 'cover'; el.style.backgroundPosition = 'center'; el.innerText = ''; }
+        }
+
+        function generateVipBadgesHTML(vipCardsObj) {
+            if (!vipCardsObj) return '';
+            let html = ''; let now = Date.now();
+            if (vipCardsObj.vip1 && vipCardsObj.vip1 > now) html += `<span class="vip-badge vip-1f">🥇 VIP 1F <span class="vip-timer vip-timer-display" data-expires="${vipCardsObj.vip1}"></span></span> `;
+            if (vipCardsObj.vip2 && vipCardsObj.vip2 > now) html += `<span class="vip-badge vip-2f">🥈 VIP 2F <span class="vip-timer vip-timer-display" data-expires="${vipCardsObj.vip2}"></span></span> `;
+            if (vipCardsObj.vip3 && vipCardsObj.vip3 > now) html += `<span class="vip-badge vip-3f">🥉 VIP 3F <span class="vip-timer vip-timer-display" data-expires="${vipCardsObj.vip3}"></span></span>`;
+            return html;
+        }
+
+        function updateMainMenuUI() {
+            if(!window.currentUser) return;
+            document.getElementById('welcomeText').innerText = window.currentUser.username;
+            document.getElementById('playerVipBadgeContainer').innerHTML = generateVipBadgesHTML(window.currentUser.vipCards);
+            document.getElementById('totalPointsDisplay').innerText = window.currentUser.totalPoints.toLocaleString();
+            document.getElementById('diamondsDisplay').innerText = window.currentUser.diamonds.toLocaleString();
+            document.getElementById('mainMenuLatestLevel').innerText = window.currentUser.unlockedLevels > 50 ? 50 : window.currentUser.unlockedLevels;
+            
+            const char = window.charactersDB.find(c => c.id === window.currentUser.equippedChar);
+            document.getElementById('equippedCharName').innerText = window.currentUser.lang === 'en' ? char.nameEn : char.nameAr;
+            renderAvatarUI('playerAvatarColor', window.currentUser.avatar, char.color, window.currentUser.username);
+            
+            if(window.currentUser.pendingReward) document.getElementById('rewardChestBtnContainer').classList.remove('hidden');
+            else document.getElementById('rewardChestBtnContainer').classList.add('hidden');
+        }
+
+        document.getElementById('openSettingsBtn').onclick = () => {
+            renderAvatarUI('settingsAvatarPreview', window.currentUser.avatar, window.charactersDB.find(c=>c.id===window.currentUser.equippedChar).color, window.currentUser.username);
+            const nameInput = document.getElementById('newNameInput'), nameBtn = document.getElementById('saveNameBtn');
+            if(window.currentUser.nameChanged) { nameInput.value = window.currentUser.username; nameInput.disabled = true; nameInput.classList.add('input-disabled'); nameBtn.disabled = true; nameBtn.classList.add('input-disabled'); document.getElementById('nameChangeMsg').innerText = window.currentUser.lang==='en'?"Name already changed.":"تم تغيير الاسم مسبقاً."; document.getElementById('nameChangeMsg').classList.remove('hidden'); } 
+            else { nameInput.value = ''; nameInput.disabled = false; nameInput.classList.remove('input-disabled'); nameBtn.disabled = false; nameBtn.classList.remove('input-disabled'); document.getElementById('nameChangeMsg').classList.add('hidden'); }
+            document.querySelectorAll('.theme-circle').forEach((el, i) => { if(i === window.currentUser.theme) el.classList.add('active'); else el.classList.remove('active'); });
+            document.getElementById('settingsScreen').classList.remove('hidden');
+        };
+
+        window.setAvatar = function(type, val) { window.currentUser.avatar = { type: type, val: val }; renderAvatarUI('settingsAvatarPreview', window.currentUser.avatar, window.charactersDB.find(c=>c.id===window.currentUser.equippedChar).color, window.currentUser.username); updateMainMenuUI(); }
+        window.tempEditAvatarUrl = ''; window.tempEditAvatarType = 'preset';
+        window.generateRandomAvatar = function(previewId = 'settingsAvatarPreview', updateDirectly = true) {
+            const styles = ['bottts', 'adventurer', 'avataaars', 'fun-emoji', 'micah', 'pixel-art'];
+            const url = `https://api.dicebear.com/7.x/${styles[Math.floor(Math.random() * styles.length)]}/svg?seed=${Math.random().toString(36).substring(2, 12)}&backgroundColor=0f172a`;
+            if(updateDirectly) window.setAvatar('preset', url); else { window.tempEditAvatarUrl = url; window.tempEditAvatarType = 'preset'; document.getElementById(previewId).style.backgroundImage = `url('${url}')`; document.getElementById(previewId).innerText = ''; }
+        };
+        
+        const avatarUploadEl = document.getElementById('avatarUpload');
+        if(avatarUploadEl) {
+            avatarUploadEl.addEventListener('change', function(e) { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = function(event) { window.setAvatar('image', event.target.result); }; reader.readAsDataURL(file); } });
+        }
+        
+        const musicUploadEl = document.getElementById('musicUpload');
+        if(musicUploadEl) {
+            musicUploadEl.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    const url = URL.createObjectURL(file);
+                    window.customAudio.src = url;
+                    window.hasCustomMusic = true;
+                    window.AudioGen.stop(); 
+                    document.getElementById('removeMusicBtn').classList.remove('hidden');
+                    window.showAlert(window.currentUser.lang === 'en' ? "Music uploaded successfully! It will play automatically." : "تم رفع الموسيقى بنجاح! ستعمل كبديل للنغمات الأساسية.");
+                    if(!document.getElementById('startScreen').classList.contains('hidden')) window.customAudio.play().catch(e=>{});
+                }
+            });
+        }
+
+        window.removeCustomMusic = function() {
+            window.customAudio.pause(); window.customAudio.src = ""; window.hasCustomMusic = false;
+            const mu = document.getElementById('musicUpload'); if(mu) mu.value = "";
+            const rb = document.getElementById('removeMusicBtn'); if(rb) rb.classList.add('hidden');
+            if(!document.getElementById('startScreen').classList.contains('hidden')) window.AudioGen.startMenu();
+        };
+
+        document.getElementById('saveNameBtn').onclick = () => { const newName = document.getElementById('newNameInput').value.trim(); if(!newName || window.currentUser.nameChanged) return; if(window.usersDB.find(u => u.username === newName && u.id !== window.currentUser.id)) { document.getElementById('nameChangeMsg').innerText = window.currentUser.lang==='en'?"Name taken!":"الاسم مستخدم!"; document.getElementById('nameChangeMsg').classList.remove('hidden'); return; } window.currentUser.username = newName; window.currentUser.nameChanged = true; updateMainMenuUI(); document.getElementById('openSettingsBtn').click(); };
+        window.setTheme = function(index) { window.currentUser.theme = index; document.querySelectorAll('.theme-circle').forEach((el, i) => { if(i === index) el.classList.add('active'); else el.classList.remove('active'); }); }
+        window.setLang = function(lang) { window.currentUser.lang = lang; window.applyLanguage(); }
+        window.applyLanguage = function() { if(!window.currentUser) return; const isEn = window.currentUser.lang === 'en'; document.dir = isEn ? 'ltr' : 'rtl'; document.querySelectorAll('[data-ar]').forEach(el => { el.innerText = isEn ? el.getAttribute('data-en') : el.getAttribute('data-ar'); }); updateMainMenuUI(); }
+
+        document.getElementById('logoutBtn').onclick = () => { 
+            window.AudioGen.stop(); if(window.hasCustomMusic) window.customAudio.pause(); window.currentUser = null; 
+            window.closeModal('settingsScreen'); window.closeModal('startScreen'); window.closeModal('adminScreen'); 
+            document.getElementById('authScreen').classList.remove('hidden'); 
+            document.getElementById('authUsername').value = ''; document.getElementById('authPassword').value = ''; document.getElementById('authError').classList.add('hidden'); 
+            
+            // Clear session
+            if (db && deviceUid) {
+                const sessionRef = doc(db, 'artifacts', appId, 'users', deviceUid, 'session', 'login');
+                setDoc(sessionRef, { username: null }).catch(e => console.error(e));
+            }
+        };
+
+        // --- خريطة المراحل ---
+        window.openLevelsMap = function() { 
+            const grid = document.getElementById('levelsGrid'); grid.innerHTML = '';
+            for(let i = 1; i <= 50; i++) {
+                const isUn = i <= window.currentUser.unlockedLevels;
+                grid.innerHTML += `<button onclick="${isUn ? `startGame(false, ${i-1})` : ''}" class="level-btn ${isUn ? 'level-unlocked' : 'level-locked'}">${isUn ? i : '🔒'} ${isUn && i === window.currentUser.unlockedLevels ? '<span class="text-[10px] text-amber-300 mt-1">★</span>' : ''}</button>`;
+            }
+            document.getElementById('levelsMapScreen').classList.remove('hidden'); 
+        };
+
+        // --- المتجر العادي والنخبة المبوب ---
+        window.currentShopIsElite = false;
+        window.openShop = function(isElite) {
+            window.currentShopIsElite = isElite; const screen = document.getElementById('shopScreen');
+            document.getElementById('shopTitle').innerText = isElite ? (window.currentUser.lang==='en'?"👑 Elite Shop":"👑 متجر النخبة") : (window.currentUser.lang==='en'?"💎 Shop":"💎 المتجر");
+            document.getElementById('shopTitle').className = isElite ? "text-3xl font-black text-amber-400" : "text-3xl font-black text-cyan-400";
+            document.getElementById('shopBalance').innerText = window.currentUser.diamonds.toLocaleString();
+            
+            if(isElite) { document.getElementById('eliteTabsContainer').classList.remove('hidden'); window.switchEliteTab('chars'); } 
+            else { document.getElementById('eliteTabsContainer').classList.add('hidden'); document.getElementById('offersGrid').classList.add('hidden'); document.getElementById('charactersGrid').classList.remove('hidden'); window.renderShopGrid(false); }
+            screen.classList.remove('hidden');
+        }
+
+        window.checkAndOpenEliteShop = function() {
+            let now = Date.now();
+            const hasVip = window.currentUser.vipCards && ((window.currentUser.vipCards.vip1 && window.currentUser.vipCards.vip1 > now) || (window.currentUser.vipCards.vip2 && window.currentUser.vipCards.vip2 > now) || (window.currentUser.vipCards.vip3 && window.currentUser.vipCards.vip3 > now));
+            if(hasVip || window.currentUser.role === 'admin') window.openShop(true);
+            else window.showAlert(window.currentUser.lang === 'en' ? "You must own a valid VIP Card to enter the Elite Shop!" : "عذراً، يجب أن تمتلك بطاقة VIP سارية المفعول لدخول متجر النخبة!");
+        };
+
+        window.switchEliteTab = function(tab) {
+            if(tab === 'chars') { document.getElementById('tabEliteChars').classList.add('active'); document.getElementById('tabEliteChars').classList.replace('text-slate-400', 'text-amber-400'); document.getElementById('tabEliteOffers').classList.remove('active'); document.getElementById('tabEliteOffers').classList.replace('text-amber-400', 'text-slate-400'); document.getElementById('offersGrid').classList.add('hidden'); document.getElementById('charactersGrid').classList.remove('hidden'); window.renderShopGrid(true); } 
+            else { document.getElementById('tabEliteOffers').classList.add('active'); document.getElementById('tabEliteOffers').classList.replace('text-slate-400', 'text-amber-400'); document.getElementById('tabEliteChars').classList.remove('active'); document.getElementById('tabEliteChars').classList.replace('text-amber-400', 'text-slate-400'); document.getElementById('charactersGrid').classList.add('hidden'); document.getElementById('offersGrid').classList.remove('hidden'); window.renderOffersGrid(); }
+        }
+
+        window.renderShopGrid = function(isElite) {
+            const grid = document.getElementById('charactersGrid'); grid.innerHTML = '';
+            window.charactersDB.filter(c => c.isElite === isElite).forEach(char => {
+                const isOwned = window.currentUser.ownedChars.includes(char.id), isEq = window.currentUser.equippedChar === char.id;
+                const charName = window.currentUser.lang === 'en' ? char.nameEn : char.nameAr;
+                let btnHtml = isEq ? `<button class="w-full mt-auto bg-emerald-500/20 text-emerald-400 py-3 rounded-xl font-bold cursor-default">✓</button>` : 
+                              isOwned ? `<button onclick="equipChar(${char.id}, ${isElite})" class="w-full mt-auto bg-sky-600 hover:bg-sky-500 text-white py-3 rounded-xl font-bold transition">${window.currentUser.lang==='en'?'Equip':'استخدام'}</button>` : 
+                              `<button onclick="buyChar(${char.id}, ${char.price})" class="w-full mt-auto ${window.currentUser.diamonds >= char.price ? (isElite ? 'bg-amber-600 hover:bg-amber-500' : 'bg-cyan-600 hover:bg-cyan-500') + ' text-white cursor-pointer' : 'bg-slate-700/50 text-slate-500 cursor-not-allowed'} py-3 rounded-xl font-bold transition">${char.price.toLocaleString()} 💎</button>`;
+                let borderCol = isEq ? 'border-emerald-500/50' : (isElite ? 'border-amber-500/30' : 'border-white/5');
+                grid.innerHTML += `<div class="glass-panel p-5 rounded-2xl flex flex-col h-full border ${borderCol}"><div class="flex items-center gap-4 mb-3"><div class="w-14 h-14 rounded-2xl border border-white/20" style="background: linear-gradient(135deg, ${char.color}, #000)"></div><div><h3 class="font-black text-xl" style="color: ${char.color}">${charName}</h3></div></div><p class="text-slate-300 text-sm mb-4">${char.desc || ''}</p>${btnHtml}</div>`;
+            });
+        }
+
+        window.renderOffersGrid = function() {
+            const grid = document.getElementById('offersGrid'); grid.innerHTML = '';
+            let now = Date.now();
+            window.offersDB.forEach(offer => {
+                const hasRequiredVip = window.currentUser.vipCards && window.currentUser.vipCards[offer.reqVip] && window.currentUser.vipCards[offer.reqVip] > now;
+                let btnClass = hasRequiredVip ? "bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-lg shadow-emerald-500/30" : "bg-slate-700/50 text-slate-500 cursor-not-allowed";
+                let btnText = hasRequiredVip ? "طلب العرض (واتساب) 💬" : "مطلوب بطاقة " + offer.reqVip.toUpperCase() + " سارية";
+                grid.innerHTML += `<div class="glass-panel p-5 rounded-2xl flex flex-col h-full border border-white/5"><h3 class="font-black text-2xl mb-2" style="color: ${offer.color}">${offer.title}</h3><p class="text-slate-300 text-sm mb-4 flex-1 leading-relaxed">${offer.desc}</p><button onclick="${hasRequiredVip ? `requestOfferWhatsApp(${offer.id})` : ''}" class="w-full ${btnClass} border border-white/10 py-3 rounded-xl font-bold transition flex justify-center items-center gap-2">${btnText}</button></div>`;
+            });
+        }
+
+        window.buyChar = function(id, price, isElite) { if (window.currentUser.diamonds >= price) { window.currentUser.diamonds -= price; window.currentUser.ownedChars.push(id); window.currentUser.equippedChar = id; window.openShop(window.currentShopIsElite); updateMainMenuUI(); } }
+        window.equipChar = function(id, isElite) { window.currentUser.equippedChar = id; window.openShop(window.currentShopIsElite); updateMainMenuUI(); }
+        
+        window.requestOfferWhatsApp = function(id) {
+            let offer = window.offersDB.find(o => o.id === id);
+            let now = Date.now();
+            if(!window.currentUser.vipCards || !window.currentUser.vipCards[offer.reqVip] || window.currentUser.vipCards[offer.reqVip] < now) { window.showAlert("البطاقة المطلوبة غير صالحة أو منتهية!"); return; }
+
+            let ownedCharNames = window.currentUser.ownedChars.map(cid => { let c = window.charactersDB.find(char => char.id === cid); return c ? c.nameAr : ''; }).join('، ');
+            let avatarInfo = window.currentUser.avatar.type === 'color' ? 'صورة بألوان مخصصة' : window.currentUser.avatar.val;
+
+            let msg = `*طلب عرض من لعبة YTUK F* 🎮\n\n`;
+            msg += `*نوع الباقة المطلوبة:* ${offer.title}\n`;
+            msg += `*اسم الحساب:* ${window.currentUser.username}\n`;
+            msg += `*البريد الإلكتروني:* ${window.currentUser.email || 'غير مسجل'}\n`;
+            msg += `*نقاط التصنيف:* ${window.currentUser.totalPoints.toLocaleString()}\n`;
+            msg += `*الألماس:* ${window.currentUser.diamonds.toLocaleString()}\n`;
+            msg += `*المراحل المجتازة:* ${window.currentUser.unlockedLevels}\n`;
+            msg += `*عدد الشخصيات المملوكة:* ${window.currentUser.ownedChars.length}\n`;
+            msg += `*الشخصيات المملوكة:* ${ownedCharNames}\n`;
+            msg += `*صورة الحساب (رابط):* ${avatarInfo}\n`;
+
+            window.open(`https://wa.me/9647801465552?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // --- الإدارة المركزية وتعديل الحسابات الشامل ---
+        window.openAdmin = function() { 
+            window.renderAdminUsers(); 
+            window.renderAdminChars();
+            document.getElementById('editReward1').value = window.rewardsDB[1]; document.getElementById('editReward2').value = window.rewardsDB[2]; document.getElementById('editReward3').value = window.rewardsDB[3]; 
+            document.getElementById('adminScreen').classList.remove('hidden'); 
+        };
+        
+        document.querySelectorAll('.admin-tab').forEach(tab => { 
+            tab.onclick = function() { 
+                document.querySelectorAll('.admin-tab').forEach(t => { t.classList.remove('active'); t.classList.add('text-slate-300'); t.style.background = 'transparent'; }); 
+                this.classList.add('active'); this.classList.remove('text-slate-300'); this.style.background = '#38bdf8'; 
+                document.querySelectorAll('.admin-panel-content').forEach(c => c.classList.add('hidden')); 
+                document.getElementById(this.dataset.target).classList.remove('hidden'); 
+                if(this.dataset.target === 'adminChars') window.renderAdminChars();
+            }; 
+        });
+
+        window.renderAdminUsers = function() {
+            const tbody = document.getElementById('adminUsersTableBody'); if(!tbody) return; tbody.innerHTML = '';
+            window.usersDB.forEach((u, i) => {
+                let editBtn = `<button onclick="openUserEdit(${i})" class="bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/40 px-2 py-1 rounded-lg mr-1 transition" title="تعديل الحساب">✏️</button>`;
+                let deleteBtn = u.id === 'u_admin' ? '' : `<button onclick="deleteUser(${i})" class="bg-rose-500/20 text-rose-300 hover:bg-rose-500/40 px-2 py-1 rounded-lg transition" title="حذف الحساب">🗑️</button>`;
+                let badges = generateVipBadgesHTML(u.vipCards);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-white/5 transition border-b border-white/5">
+                        <td class="p-4 font-bold ${u.isBot ? 'text-indigo-400' : 'text-sky-400'} flex items-center justify-start gap-1">${u.username} ${u.isBot?'(آلي)':''} <div class="scale-75">${badges}</div> <div class="flex gap-1">${editBtn}${deleteBtn}</div></td>
+                        <td class="p-4"><input type="number" id="admPts_${i}" value="${u.totalPoints}" class="w-24 bg-black/50 border border-white/10 text-amber-400 px-2 py-1 rounded"></td>
+                        <td class="p-4"><input type="number" id="admDia_${i}" value="${u.diamonds}" class="w-20 bg-black/50 border border-white/10 text-cyan-400 px-2 py-1 rounded"></td>
+                        <td class="p-4"><input type="number" id="admLvl_${i}" value="${u.unlockedLevels}" class="w-16 bg-black/50 border border-white/10 text-white px-2 py-1 rounded"></td>
+                        <td class="p-4 text-center"><button onclick="saveAdminUser(${i})" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 rounded-lg text-xs font-bold shadow-md">حفظ السريع</button></td>
+                    </tr>`;
+            });
+        }
+        
+        window.deleteUser = function(index) {
+            if (window.usersDB[index].id === 'u_admin') { window.showAlert('لا يمكنك حذف حساب الإدارة الأساسي!'); return; }
+            window.showAlert(`هل أنت متأكد من حذف/حظر حساب: ${window.usersDB[index].username}؟`, true, () => {
+                window.usersDB.splice(index, 1);
+                window.renderAdminUsers();
+                if(!document.getElementById('leaderboardScreen').classList.contains('hidden')) window.renderLeaderboard();
+            });
+        };
+
+        window.saveAdminUser = function(index) { window.usersDB[index].totalPoints = parseInt(document.getElementById(`admPts_${index}`).value)||0; window.usersDB[index].diamonds = parseInt(document.getElementById(`admDia_${index}`).value)||0; window.usersDB[index].unlockedLevels = parseInt(document.getElementById(`admLvl_${index}`).value)||1; window.showAlert(`تم الحفظ!`); if(window.usersDB[index].id === window.currentUser.id) updateMainMenuUI(); }
+        window.addBot = function() { window.usersDB.push({ id: 'b_'+Date.now(), username: "Bot_"+Math.floor(Math.random()*999), role: 'player', unlockedLevels: Math.floor(Math.random()*20)+1, totalPoints: Math.floor(Math.random()*50000), diamonds: Math.floor(Math.random()*500), ownedChars: [0], equippedChar: 0, isBot: true, avatar: {type:'preset', val: 'https://api.dicebear.com/7.x/bottts/svg?seed='+Math.random().toString(36).substring(7)}, pendingReward: null, nameChanged: false, lang: 'ar', theme: 0, vipCards: {} }); window.renderAdminUsers(); };
+        
+        window.editingUserIndex = -1;
+        window.openUserEdit = function(index) {
+            window.editingUserIndex = index; const u = window.usersDB[index];
+            document.getElementById('userEditTitle').innerHTML = u.isBot ? `<span>🤖</span> تعديل البوت` : `<span>👤</span> تعديل اللاعب`;
+            document.getElementById('userEditName').value = u.username;
+            window.tempEditAvatarUrl = u.avatar.val; window.tempEditAvatarType = u.avatar.type; 
+            renderAvatarUI('userEditAvatarPreview', u.avatar, window.charactersDB.find(c=>c.id===u.equippedChar).color, u.username);
+            
+            const select = document.getElementById('userEditChar'); select.innerHTML = '';
+            window.charactersDB.forEach(char => { const selected = char.id === u.equippedChar ? 'selected' : ''; select.innerHTML += `<option value="${char.id}" ${selected}>${char.nameAr} ${char.isElite ? '(نخبة)' : ''}</option>`; });
+            
+            let now = Date.now();
+            if(!u.vipCards) u.vipCards = {};
+            document.getElementById('vip1Checkbox').checked = u.vipCards.vip1 && u.vipCards.vip1 > now;
+            document.getElementById('vip2Checkbox').checked = u.vipCards.vip2 && u.vipCards.vip2 > now;
+            document.getElementById('vip3Checkbox').checked = u.vipCards.vip3 && u.vipCards.vip3 > now;
+
+            document.getElementById('userEditScreen').classList.remove('hidden');
+        }
+        
+        const userAvatarUploadEl = document.getElementById('userAvatarUpload');
+        if(userAvatarUploadEl) {
+            userAvatarUploadEl.addEventListener('change', function(e) { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = function(event) { window.tempEditAvatarUrl = event.target.result; window.tempEditAvatarType = 'image'; document.getElementById('userEditAvatarPreview').style.background = 'transparent'; document.getElementById('userEditAvatarPreview').style.backgroundImage = `url('${window.tempEditAvatarUrl}')`; document.getElementById('userEditAvatarPreview').innerText = ''; }; reader.readAsDataURL(file); } });
+        }
+        
+        window.saveUserEdit = function() {
+            if (window.editingUserIndex === -1) return;
+            const u = window.usersDB[window.editingUserIndex], newName = document.getElementById('userEditName').value.trim(), newCharId = parseInt(document.getElementById('userEditChar').value);
+            if(newName) u.username = newName; u.avatar = { type: window.tempEditAvatarType, val: window.tempEditAvatarUrl }; u.equippedChar = newCharId;
+            if(!u.ownedChars.includes(newCharId)) u.ownedChars.push(newCharId);
+            
+            let now = Date.now();
+            if(!u.vipCards) u.vipCards = {};
+
+            if(document.getElementById('vip1Checkbox').checked) { if(!u.vipCards.vip1 || u.vipCards.vip1 < now) u.vipCards.vip1 = now + (720 * 3600000); } else { delete u.vipCards.vip1; }
+            if(document.getElementById('vip2Checkbox').checked) { if(!u.vipCards.vip2 || u.vipCards.vip2 < now) u.vipCards.vip2 = now + (168 * 3600000); } else { delete u.vipCards.vip2; }
+            if(document.getElementById('vip3Checkbox').checked) { if(!u.vipCards.vip3 || u.vipCards.vip3 < now) u.vipCards.vip3 = now + (24 * 3600000); } else { delete u.vipCards.vip3; }
+
+            window.renderAdminUsers(); window.closeModal('userEditScreen');
+            if(u.id === window.currentUser.id) updateMainMenuUI();
+        }
+
+        window.renderAdminChars = function() { 
+            const list = document.getElementById('adminCharsList'); if(!list) return; list.innerHTML = ''; 
+            window.charactersDB.forEach((c, i) => { list.innerHTML += `<div class="bg-black/30 p-4 rounded-xl border border-white/5"><div class="font-bold mb-3 flex justify-between"><span style="color:${c.color}">${c.nameAr} ${c.isElite ? '👑' : ''}</span><button onclick="saveAdminChar(${i})" class="bg-blue-600 hover:bg-blue-500 transition px-3 py-1 rounded text-xs">تحديث السعر</button></div><div class="flex items-center gap-3"><label class="text-slate-400 text-sm">السعر (💎):</label><input type="number" id="admCharP_${i}" value="${c.price}" class="w-full bg-black/50 border border-white/10 px-2 py-1 rounded text-cyan-400 font-bold"></div></div>`; }); 
+        }
+        window.saveAdminChar = function(index) { window.charactersDB[index].price = parseInt(document.getElementById(`admCharP_${index}`).value)||0; window.showAlert('تم التحديث بنجاح!'); }
+
+        window.addEliteChar = function() {
+            let n = document.getElementById('newEliteName').value.trim(), d = document.getElementById('newEliteDesc').value.trim();
+            let p = parseInt(document.getElementById('newElitePrice').value) || 15000, col = document.getElementById('newEliteColor').value || '#ffffff';
+            let j = parseInt(document.getElementById('newEliteJumps').value) || 2, m = parseFloat(document.getElementById('newEliteMult').value) || 1.0;
+            let s = document.getElementById('newEliteShield').checked;
+            if(!n) { window.showAlert("يرجى كتابة اسم الشخصية!"); return; }
+            let newId = window.charactersDB.length > 0 ? Math.max(...window.charactersDB.map(c=>c.id)) + 1 : 200;
+            window.charactersDB.push({ id: newId, nameAr: n, nameEn: n, desc: d, price: p, color: col, jumps: j, grav: 0.6, hitbox: 1.0, mult: m, shield: s, isElite: true });
+            window.showAlert('تمت إضافة الشخصية لمتجر النخبة بنجاح!'); document.getElementById('newEliteName').value = ''; document.getElementById('newEliteDesc').value = '';
+        }
+        
+        document.getElementById('saveRewardsBtn').onclick = () => { window.rewardsDB[1] = document.getElementById('editReward1').value; window.rewardsDB[2] = document.getElementById('editReward2').value; window.rewardsDB[3] = document.getElementById('editReward3').value; window.showAlert('تم الحفظ!'); };
+        document.getElementById('setTimerBtn').onclick = () => {
+            let h = parseInt(document.getElementById('timerH').value) || 0, m = parseInt(document.getElementById('timerM').value) || 0, s = parseInt(document.getElementById('timerS').value) || 0;
+            let newDuration = (h * 3600000) + (m * 60000) + (s * 1000);
+            if(newDuration <= 0) {
+                window.showAlert("لا يمكن تعيين الوقت لصفر! تم تعيين دقيقة واحدة كحد أدنى.");
+                newDuration = 60000;
+            }
+            currentRewardDuration = newDuration;
+            rewardEndTime = Date.now() + currentRewardDuration; updateTimerUI(); window.showAlert('تم تشغيل العداد بنجاح!');
+        };
+
+        // --- محرك اللعبة والفيزياء ---
+        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
+        const bgCanvas = document.getElementById('bgCanvas'); const bgCtx = bgCanvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        let isPlaying = false, isPaused = false, isEndlessMode = false, score = 0, sessionDiamonds = 0, currentLvlIndex = 0, gameSpeed = 5, frameCount = 0, animId;
+        let pCharConfig, isGodMode = false, activePalette;
+        let player, obstacles = [], particles = [], collectibles = [];
+
+        class Player {
+            constructor(config) { this.width = 40; this.height = 40; this.x = window.innerWidth > 768 ? 150 : 80; this.groundY = canvas.height - 100; this.y = this.groundY - this.height; this.vy = 0; this.rotation = 0; this.color = config.color; this.gravity = config.grav; this.maxJumps = config.jumps; this.jumpForce = -13; this.jumps = 0; this.hitboxScale = config.hitbox; this.hasShield = config.shield; this.trail = []; }
+            update() { this.groundY = canvas.height - 100; this.vy += this.gravity; this.y += this.vy; if (this.y < this.groundY - this.height) { this.rotation += 0.12; } else { this.y = this.groundY - this.height; this.vy = 0; this.jumps = 0; this.rotation = Math.round(this.rotation / (Math.PI/2)) * (Math.PI/2); } this.trail.push({x: this.x, y: this.y, rot: this.rotation}); if(this.trail.length > 12) this.trail.shift(); }
+            jump() { if (this.jumps < this.maxJumps) { this.vy = this.jumpForce; this.jumps++; createParticles(this.x + this.width/2, this.y + this.height, this.color, 5); } }
+            draw() { ctx.save(); this.trail.forEach((t, i) => { ctx.save(); ctx.translate(t.x + this.width/2, t.y + this.height/2); ctx.rotate(t.rot); ctx.fillStyle = this.color; ctx.globalAlpha = 0.4 * (i/12); ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height); ctx.restore(); }); ctx.translate(this.x + this.width/2, this.y + this.height/2); ctx.rotate(this.rotation); ctx.shadowBlur = 20; ctx.shadowColor = this.color; ctx.fillStyle = this.color; let renderW = this.width * this.hitboxScale; let renderH = this.height * this.hitboxScale; ctx.fillRect(-renderW/2, -renderH/2, renderW, renderH); ctx.fillStyle = activePalette.bg; ctx.fillRect(-renderW/4, -renderH/4, renderW/2, renderH/2); if(this.hasShield) { ctx.strokeStyle = '#facc15'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, this.width, 0, Math.PI*2); ctx.stroke(); } if(isGodMode) { ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.arc(0, 0, this.width * 1.5, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);} ctx.restore(); }
+        }
+        class Obstacle { constructor(pal) { this.w = Math.random()*30+35; this.h = Math.random()*45+45; this.x = canvas.width; this.y = canvas.height - 100 - this.h; this.color = pal.obs; this.del = false; } update() { this.x -= gameSpeed; if(this.x + this.w < 0) this.del = true; } draw() { ctx.shadowBlur = 15; ctx.shadowColor = this.color; ctx.fillStyle = this.color; ctx.beginPath(); ctx.moveTo(this.x + this.w/2, this.y); ctx.lineTo(this.x+this.w, this.y+this.h); ctx.lineTo(this.x, this.y+this.h); ctx.fill(); ctx.shadowBlur = 0; } }
+        class Collectible { constructor() { this.r = 15; this.x = canvas.width + 50; this.y = canvas.height - 100 - (Math.random() * 100 + 50); this.color = '#22d3ee'; this.del = false; this.float = 0; } update() { this.x -= gameSpeed; this.float += 0.1; if(this.x + this.r < 0) this.del = true; } draw() { let offsetY = Math.sin(this.float) * 10; ctx.save(); ctx.translate(this.x, this.y + offsetY); ctx.shadowBlur = 20; ctx.shadowColor = this.color; ctx.fillStyle = this.color; ctx.beginPath(); ctx.moveTo(0, -this.r); ctx.lineTo(this.r, 0); ctx.lineTo(0, this.r); ctx.lineTo(-this.r, 0); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(0, -this.r/2); ctx.lineTo(this.r/2, 0); ctx.lineTo(0, this.r/2); ctx.lineTo(-this.r/2, 0); ctx.closePath(); ctx.fill(); ctx.restore(); } }
+        function createParticles(x, y, c, count=10) { for(let i=0; i<count; i++) particles.push({x:x, y:y, vx:Math.random()*8-4, vy:Math.random()*-6-2, c:c, l:1}); }
+        function drawBg(ctxRef, w, h, pal, speedOffset) { ctxRef.fillStyle = pal.bg; ctxRef.fillRect(0,0,w,h); ctxRef.fillStyle = pal.ground; ctxRef.fillRect(0, h-100, w, 100); ctxRef.shadowBlur = 20; ctxRef.shadowColor = pal.glow; ctxRef.fillStyle = pal.glow; ctxRef.fillRect(0, h-100, w, 4); ctxRef.shadowBlur = 0; ctxRef.strokeStyle = pal.grid; ctxRef.lineWidth = 1.5; ctxRef.globalAlpha = 0.3; let off = speedOffset % 50; for(let i = -50; i < w; i+=50) { ctxRef.beginPath(); ctxRef.moveTo(i-off, h-100); ctxRef.lineTo(i-off-150, h); ctxRef.stroke(); } ctxRef.globalAlpha = 1.0; }
+
+        window.startGame = function(endless = false, forcedLevelIndex = -1) {
+            isEndlessMode = endless; window.closeModal('startScreen'); window.closeModal('levelsMapScreen'); window.closeModal('gameOverScreen'); document.getElementById('bgCanvas').classList.add('hidden'); document.getElementById('gameCanvas').classList.remove('hidden'); document.getElementById('hud').classList.remove('hidden'); document.getElementById('hud').classList.add('flex');
+            pCharConfig = window.charactersDB.find(c => c.id === window.currentUser.equippedChar); isGodMode = (window.currentUser.role === 'admin' && document.getElementById('godModeToggle') && document.getElementById('godModeToggle').checked);
+
+            if(isEndlessMode) { activePalette = window.palettes[4]; gameSpeed = 6; document.getElementById('hudLevelLabel').innerText = window.currentUser.lang==='en'?"Mode":"الوضع"; document.getElementById('hudLevel').innerText = "∞"; document.getElementById('hudProgressArea').classList.add('hidden'); } 
+            else { currentLvlIndex = forcedLevelIndex !== -1 ? forcedLevelIndex : Math.min(window.currentUser.unlockedLevels - 1, 49); let lvlConfig = window.gameLevels[currentLvlIndex]; activePalette = window.palettes[lvlConfig.paletteIdx]; gameSpeed = lvlConfig.baseSpeed; document.getElementById('hudLevelLabel').innerText = window.currentUser.lang==='en'?"Level":"المرحلة"; document.getElementById('hudLevel').innerText = lvlConfig.id; document.getElementById('hudTarget').innerText = lvlConfig.targetScore; document.getElementById('hudProgressArea').classList.remove('hidden'); }
+
+            player = new Player(pCharConfig); obstacles = []; particles = []; collectibles = []; score = 0; sessionDiamonds = 0; frameCount = 0; isPlaying = true; isPaused = false; document.getElementById('diamondDisplayHUD').innerText = "0"; document.getElementById('scoreDisplay').innerText = "0"; 
+            
+            if(window.hasCustomMusic && window.customAudio.src) {
+                window.customAudio.currentTime = 0;
+                window.customAudio.play().catch(e => console.log("Auto-play blocked", e));
+            } else {
+                if(isEndlessMode) window.AudioGen.startEndless();
+                else window.AudioGen.startLevel(currentLvlIndex);
+            }
+            
+            loop();
+        }
+
+        document.getElementById('pauseBtn').onclick = () => { if(!isPlaying) return; isPlaying = false; isPaused = true; document.getElementById('pauseScreen').classList.remove('hidden'); if(window.hasCustomMusic) window.customAudio.pause(); else window.AudioGen.pause(); };
+        document.getElementById('resumeBtn').onclick = () => { isPaused = false; isPlaying = true; document.getElementById('pauseScreen').classList.add('hidden'); if(window.hasCustomMusic) window.customAudio.play(); else window.AudioGen.resume(); loop(); };
+        document.getElementById('quitGameBtn').onclick = () => { isPaused = false; isPlaying = false; window.closeModal('pauseScreen'); document.getElementById('gameCanvas').classList.add('hidden'); document.getElementById('hud').classList.add('hidden'); document.getElementById('bgCanvas').classList.remove('hidden'); document.getElementById('startScreen').classList.remove('hidden'); updateMainMenuUI(); if(window.hasCustomMusic) window.customAudio.pause(); else window.AudioGen.stop(); animMenuBg(); };
+
+        function checkHit(p, ox, oy, ow, oh, isCircle = false) { let hw = p.width * p.hitboxScale, hh = p.height * p.hitboxScale; let px = p.x + (p.width - hw)/2, py = p.y + (p.height - hh)/2; let pad = 5; if(isCircle) return (px+hw-pad > ox-ow && px+pad < ox+ow && py+hh-pad > oy-ow && py+pad < oy+ow); return (px + hw - pad > ox && px + pad < ox + ow && py + hh - pad > oy && py + pad < oy + oh); }
+
+        function loop() {
+            if(!isPlaying || isPaused) return;
+            ctx.fillStyle = activePalette.bg; ctx.globalAlpha = 0.6; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.globalAlpha = 1.0;
+            drawBg(ctx, canvas.width, canvas.height, activePalette, frameCount * gameSpeed * 0.5);
+            player.update(); player.draw();
+
+            if(frameCount % Math.max(35, Math.floor(160 - gameSpeed*4)) === 0) obstacles.push(new Obstacle(activePalette));
+            if(frameCount % Math.floor(Math.random() * 100 + 150) === 0) collectibles.push(new Collectible());
+
+            for(let i=0; i<collectibles.length; i++) { let c = collectibles[i]; c.update(); c.draw(); if(checkHit(player, c.x, c.y, c.r, c.r, true)) { sessionDiamonds++; document.getElementById('diamondDisplayHUD').innerText = sessionDiamonds; createParticles(c.x, c.y, '#22d3ee', 5); c.del = true; } }
+            collectibles = collectibles.filter(c => !c.del);
+
+            for(let i=0; i<obstacles.length; i++) { let o = obstacles[i]; o.update(); o.draw(); if(isGodMode && Math.abs(player.x - o.x) < 30) { createParticles(o.x, o.y, o.color); o.del = true; } else if(checkHit(player, o.x, o.y, o.w, o.h)) { if(player.hasShield) { player.hasShield = false; o.del = true; createParticles(player.x, player.y, '#facc15'); } else { endGame(false); return; } } }
+            obstacles = obstacles.filter(o => !o.del);
+            particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.l-=0.04; ctx.globalAlpha=Math.max(0,p.l); ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill(); }); particles = particles.filter(p => p.l > 0); ctx.globalAlpha = 1;
+
+            score += (gameSpeed * 0.01) * pCharConfig.mult; document.getElementById('scoreDisplay').innerText = Math.floor(score);
+            if(!isEndlessMode) { let lvlConfig = window.gameLevels[currentLvlIndex]; document.getElementById('progressBar').style.width = Math.min(100, (score/lvlConfig.targetScore)*100) + "%"; if(score >= lvlConfig.targetScore) { if(window.currentUser.unlockedLevels === currentLvlIndex + 1 && window.currentUser.unlockedLevels < 50) window.currentUser.unlockedLevels++; endGame(true); return; } }
+
+            if(gameSpeed < 25) gameSpeed += 0.002; frameCount++; animId = requestAnimationFrame(loop);
+        }
+
+        function endGame(won = false) {
+            isPlaying = false; cancelAnimationFrame(animId);
+            if(window.hasCustomMusic) window.customAudio.pause(); else window.AudioGen.stop();
+            
+            let earnedPts = Math.floor(score); if(won && !isEndlessMode) earnedPts += 500; 
+            window.currentUser.totalPoints += earnedPts; window.currentUser.diamonds += sessionDiamonds;
+            
+            ctx.fillStyle = activePalette.bg; ctx.fillRect(0,0,canvas.width,canvas.height); drawBg(ctx, canvas.width, canvas.height, activePalette, 0);
+            obstacles.forEach(o=>o.draw()); if(!won) createParticles(player.x, player.y, player.color, 30);
+            particles.forEach(p => { ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fill(); });
+
+            document.getElementById('hud').classList.add('hidden'); const goScreen = document.getElementById('gameOverScreen');
+            if(isEndlessMode) { goScreen.querySelector('h2').innerText = window.currentUser.lang==='en'?"Run Ended!":"نهاية الجري!"; goScreen.querySelector('h2').className = "text-6xl md:text-7xl font-black text-purple-400 mb-6 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"; } 
+            else { goScreen.querySelector('h2').innerText = won ? (window.currentUser.lang==='en'?"Level Cleared!":"تم الاجتياز بنجاح!") : (window.currentUser.lang==='en'?"Crashed!":"اصطدام!"); goScreen.querySelector('h2').className = won ? "text-6xl md:text-7xl font-black text-emerald-400 mb-6 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]" : "text-6xl md:text-7xl font-black text-rose-500 mb-6 drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]"; }
+            
+            document.getElementById('earnedPoints').innerText = "+" + earnedPts.toLocaleString(); document.getElementById('earnedDiamonds').innerText = "+" + sessionDiamonds.toLocaleString();
+            goScreen.classList.remove('hidden'); updateMainMenuUI();
+            
+            if(!window.hasCustomMusic) window.AudioGen.startMenu();
+        }
+
+        document.getElementById('restartBtn').onclick = () => { window.closeModal('gameOverScreen'); document.getElementById('gameCanvas').classList.add('hidden'); document.getElementById('bgCanvas').classList.remove('hidden'); document.getElementById('startScreen').classList.remove('hidden'); animMenuBg(); };
+        window.addEventListener('keydown', (e) => { if((e.code==='Space'||e.code==='ArrowUp') && isPlaying && !isPaused) { e.preventDefault(); player.jump(); }});
+        window.addEventListener('touchstart', (e) => { if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && isPlaying && !isPaused) { e.preventDefault(); player.jump(); }}, {passive:false});
+
+        let bgAnimFrame = 0;
+        function animMenuBg() {
+            if(!isPlaying) { let menuTheme = (window.currentUser && window.palettes[window.currentUser.theme]) || window.palettes[0]; drawBg(bgCtx, bgCanvas.width, bgCanvas.height, menuTheme, bgAnimFrame); bgAnimFrame+=0.5; }
+            requestAnimationFrame(animMenuBg);
+        }
+        animMenuBg();
+
+    </script>
+</body>
+</html>
